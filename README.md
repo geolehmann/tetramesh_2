@@ -18,8 +18,8 @@ Sanzenbacher, S. (2010) Darstellung von Kaustiken und Lichtstreuung in Interakti
   
 **Current status (26/08/2016):**  
 
-Loading wavefront .obj nodes - done
-Implement tetrahedralization via tetgen - done
+Loading wavefront .obj nodes - done  
+Implement tetrahedralization via tetgen - done  
 
 ToDo:
 
