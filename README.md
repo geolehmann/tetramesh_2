@@ -23,6 +23,6 @@ Implement tetrahedralization via tetgen - done
 
 ToDo:
 
-Associate face inidces to tetmesh nodes
-Rewrite traversal algorithm
+Associate face inidces to tetmesh nodes  
+Rewrite traversal algorithm  
 
