@@ -23,13 +23,18 @@
     <ClInclude Include="Math.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="stb_truetype.h" />
-    <ClInclude Include="tetgen_io.h" />
+    <ClInclude Include="mesh_io.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Main.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Externals\tetgen\predicates.cxx" />
+    <ClCompile Include="..\Externals\tetgen\tetgen.cxx" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A22737C5-107E-4026-9223-04B093804570}</ProjectGuid>
@@ -80,11 +85,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\Externals\glfw-3.1.2.bin.WIN64\include;..\Externals\glm;..\Externals;..\Externals\glut\include;..\Externals\glew-1.13.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\Externals\glfw-3.1.2.bin.WIN64\include;..\Externals\glm;..\Externals;..\Externals\glut\include;..\Externals\glew-1.13.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;..\Externals\tetgen;$(IncludePath)</IncludePath>
     <LibraryPath>..\Externals\glfw-3.1.2.bin.WIN64\lib-vc2013;C:\Program Files %28x86%29\NVIDIA Corporation\Cg\lib.x64;..\Externals\glew-1.13.0\lib\Release\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\Externals\glfw-3.1.2.bin.WIN64\include;..\Externals;..\Externals\glm;..\Externals\glut\include;..\Externals\glew-1.13.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\Externals\glfw-3.1.2.bin.WIN64\include;..\Externals;..\Externals\glm;..\Externals\glut\include;..\Externals\glew-1.13.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;..\Externals\tetgen;$(IncludePath)</IncludePath>
     <LibraryPath>..\Externals\glfw-3.1.2.bin.WIN64\lib-vc2013;C:\Program Files %28x86%29\NVIDIA Corporation\Cg\lib.x64;..\Externals\glew-1.13.0\lib\Release\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -101,11 +106,13 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>cudart.lib;glfw3.lib;opengl32.lib;glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <TreatLinkerWarningAsErrors>
+      </TreatLinkerWarningAsErrors>
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>

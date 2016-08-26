@@ -18,9 +18,6 @@
     <ClInclude Include="Math.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="tetgen_io.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="Camera.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
@@ -33,10 +30,24 @@
     <ClInclude Include="Util.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh_io.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Main.cu">
       <Filter>Quelldateien</Filter>
     </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Externals\tetgen\tetgen.cxx">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Externals\tetgen\predicates.cxx">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

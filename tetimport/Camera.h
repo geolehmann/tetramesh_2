@@ -132,12 +132,12 @@ void InteractiveCamera::setResolution(float x, float y){
 }
 
 float radiansToDegrees(float radians) {
-	float degrees = radians * 180.0 / PI;
+	float degrees = radians * 180.0 / _PI_;
 	return degrees;
 }
 
 float degreesToRadians(float degrees) {
-	float radians = degrees / 180.0 * PI;
+	float radians = degrees / 180.0 * _PI_;
 	return radians;
 }
 
@@ -171,7 +171,7 @@ float mod(float x, float y) { // Does this account for -y ???
 }
 
 void InteractiveCamera::fixYaw() {
-	yaw = mod(yaw, 2 * PI); // Normalize the yaw.
+	yaw = mod(yaw, 2 * _PI_); // Normalize the yaw.
 }
 
 float clamp2(float n, float low, float high) {

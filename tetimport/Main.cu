@@ -15,7 +15,7 @@
 
 #define GLEW_STATIC
 #include "Util.h"
-#include "tetgen_io.h"
+#include "mesh_io.h"
 #include "Camera.h"
 #include "device_launch_parameters.h"
 #include "GLFW/glfw3.h"
@@ -24,6 +24,7 @@
 #include <curand_kernel.h>
 
 #include "Sphere.h"
+#include "Mesh.h"
 
 #define spp 1
 #define gamma 2.2f
@@ -335,7 +336,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 		if (firsthit.refl_t == DIFF){
 
 			// pick two random numbers
-			float phi = 2 * PI * curand_uniform(randState);
+			float phi = 2 * _PI_ * curand_uniform(randState);
 			float r2 = curand_uniform(randState);
 			float r2s = sqrtf(r2);
 
@@ -360,7 +361,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 
 			// compute random perturbation of ideal reflection vector
 			// the higher the phong exponent, the closer the perturbed vector is to the ideal reflection direction
-			float phi = 2 * PI * curand_uniform(randState);
+			float phi = 2 * _PI_ * curand_uniform(randState);
 			float r2 = curand_uniform(randState);
 			float phongexponent = 20;
 			float cosTheta = powf(1 - r2, 1.0f / (phongexponent + 1));
@@ -480,8 +481,8 @@ __global__ void renderKernel(mesh2 *tetmesh, int32_t start, float3 *accumbuffer,
 		float4 horizontalAxis = Cross(rendercamview, rendercamup); horizontalAxis = normalize(horizontalAxis); // Important to normalize!
 		float4 verticalAxis = Cross(horizontalAxis, rendercamview); verticalAxis = normalize(verticalAxis); // verticalAxis is normalized by default, but normalize it explicitly just for good measure.
 		float4 middle = rendercampos + rendercamview;
-		float4 horizontal = horizontalAxis * tanf(fovx * 0.5 * (PI / 180)); // Now treating FOV as the full FOV, not half, so I multiplied it by 0.5. I also normzlized A and B, so there's no need to divide by the length of A or B anymore. Also normalized view and removed lengthOfView. Also removed the cast to float.
-		float4 vertical = verticalAxis * tanf(-fovy * 0.5 * (PI / 180)); // Now treating FOV as the full FOV, not half, so I multiplied it by 0.5. I also normzlized A and B, so there's no need to divide by the length of A or B anymore. Also normalized view and removed lengthOfView. Also removed the cast to float.
+		float4 horizontal = horizontalAxis * tanf(fovx * 0.5 * (_PI_ / 180)); // Now treating FOV as the full FOV, not half, so I multiplied it by 0.5. I also normzlized A and B, so there's no need to divide by the length of A or B anymore. Also normalized view and removed lengthOfView. Also removed the cast to float.
+		float4 vertical = verticalAxis * tanf(-fovy * 0.5 * (_PI_ / 180)); // Now treating FOV as the full FOV, not half, so I multiplied it by 0.5. I also normzlized A and B, so there's no need to divide by the length of A or B anymore. Also normalized view and removed lengthOfView. Also removed the cast to float.
 		float jitterValueX = curand_uniform(&randState) - 0.5;
 		float jitterValueY = curand_uniform(&randState) - 0.5;
 		float sx = (jitterValueX + pixelx) / (width - 1);
@@ -493,7 +494,7 @@ __global__ void renderKernel(mesh2 *tetmesh, int32_t start, float3 *accumbuffer,
 		{
 			float random1 = curand_uniform(&randState);
 			float random2 = curand_uniform(&randState);
-			float angle = 2 * PI * random1;
+			float angle = 2 * _PI_ * random1;
 			float distance = apertureRadius * sqrtf(random2);
 			float apertureX = cos(angle) * distance;
 			float apertureY = sin(angle) * distance;
@@ -618,6 +619,9 @@ void render()
 
 int main(int argc, char *argv[])
 {
+	tetgenio out;
+	tetrahedralize_nodes("cornellbox_orig.obj", out);
+
 	delete interactiveCamera;
 	interactiveCamera = new InteractiveCamera();
 	interactiveCamera->setResolution(width, height);
