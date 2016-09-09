@@ -14,7 +14,7 @@
 
 //----------------------- tetgen interop -----------------------------------------------------------------
 
-void tetrahedralize_nodes(std::string inputfile, tetgenio &out)
+void tetrahedralize_nodes(std::string inputfile, mesh2* mesh)
 {
 	std::vector<float3> nodes;
 
@@ -29,7 +29,8 @@ void tetrahedralize_nodes(std::string inputfile, tetgenio &out)
 	std::cout << "# of shapes    : " << shapes.size() << std::endl;
 	std::cout << "# of materials : " << materials.size() << std::endl;
 
-	for (int32_t i = 0; i < attrib.vertices.size() / 3; i++)
+
+	for (int32_t i = 0; i < attrib.vertices.size() / 3; i++) // loop over all vertices, indepedently from number of shapes
 	{
 		float vx = attrib.vertices[3 * i + 0];
 		float vy = attrib.vertices[3 * i + 1];
@@ -38,7 +39,7 @@ void tetrahedralize_nodes(std::string inputfile, tetgenio &out)
 	}
 
 	// 2. put nodes into tetgenio->in and tetrahedralize
-	tetgenio in, tmp;
+	tetgenio in, out;
 	in.firstnumber = 1;  // All indices start from 1.
 	in.numberofpoints = (int)(attrib.vertices.size() / 3); // number of nodes
 	in.pointlist = new REAL[attrib.vertices.size()];
@@ -50,4 +51,44 @@ void tetrahedralize_nodes(std::string inputfile, tetgenio &out)
 		in.pointlist[i * 3 + 2] = nodes.at(i).z;
 	}
 	tetrahedralize("Q", &in, &out); // parameter Q for quiet mode
+
+	// 3. put tetmesh into 'mesh' structure, connect faces from tinyobj to mesh
+
+	mesh->facenum = out.numberoftrifaces;
+	mesh->nodenum = out.numberofpoints;
+	mesh->tetnum = out.numberoftetrahedra;
+
+
+
+
+
+
+
+	// this part for association of faces to tetnodes
+	// For each shape
+	for (size_t i = 0; i < shapes.size(); i++)
+	{
+		size_t index_offset = 0;
+		// For each face
+		for (size_t f = 0; f < shapes[i].mesh.num_face_vertices.size(); f++)
+		{		
+			size_t fnum = shapes[i].mesh.num_face_vertices[f];
+			//shape 0, loop over faces
+			// For each vertex in the face
+			for (size_t v = 0; v < fnum; v++)
+			{
+				tinyobj::index_t idx = shapes[i].mesh.indices[index_offset + v];
+			//	mesh->
+	
+
+
+			}
+
+			index_offset += fnum;
+		}
+	}
+	// end
+
+
+	
 }

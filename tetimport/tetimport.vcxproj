@@ -69,7 +69,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.props" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 8.0.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -85,12 +85,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\Externals\glfw-3.1.2.bin.WIN64\include;..\Externals\glm;..\Externals;..\Externals\glut\include;..\Externals\glew-1.13.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;..\Externals\tetgen;$(IncludePath)</IncludePath>
-    <LibraryPath>..\Externals\glfw-3.1.2.bin.WIN64\lib-vc2013;C:\Program Files %28x86%29\NVIDIA Corporation\Cg\lib.x64;..\Externals\glew-1.13.0\lib\Release\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\Externals\glfw-3.1.2.bin.WIN64\include;..\Externals\glm;..\Externals;..\Externals\glut\include;..\Externals\glew-1.13.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include;..\Externals\tetgen;$(IncludePath)</IncludePath>
+    <LibraryPath>..\Externals\glfw-3.1.2.bin.WIN64\lib-vc2013;C:\Program Files %28x86%29\NVIDIA Corporation\Cg\lib.x64;..\Externals\glew-1.13.0\lib\Release\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\Externals\glfw-3.1.2.bin.WIN64\include;..\Externals;..\Externals\glm;..\Externals\glut\include;..\Externals\glew-1.13.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;..\Externals\tetgen;$(IncludePath)</IncludePath>
-    <LibraryPath>..\Externals\glfw-3.1.2.bin.WIN64\lib-vc2013;C:\Program Files %28x86%29\NVIDIA Corporation\Cg\lib.x64;..\Externals\glew-1.13.0\lib\Release\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\Externals\glfw-3.1.2.bin.WIN64\include;..\Externals;..\Externals\glm;..\Externals\glut\include;..\Externals\glew-1.13.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include;..\Externals\tetgen;$(IncludePath)</IncludePath>
+    <LibraryPath>..\Externals\glfw-3.1.2.bin.WIN64\lib-vc2013;C:\Program Files %28x86%29\NVIDIA Corporation\Cg\lib.x64;..\Externals\glew-1.13.0\lib\Release\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -160,6 +160,6 @@
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.targets" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 8.0.targets" />
   </ImportGroup>
 </Project>
