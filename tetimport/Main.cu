@@ -619,8 +619,8 @@ void render()
 
 int main(int argc, char *argv[])
 {
-	//mesh2 tetmesh;
-	//tetrahedralize_nodes("cornellbox_orig.obj", &tetmesh);
+	mesh3 tetmesh2;
+	tetrahedralize_nodes("cornellbox_orig.obj", &tetmesh2);
 
 	delete interactiveCamera;
 	interactiveCamera = new InteractiveCamera();

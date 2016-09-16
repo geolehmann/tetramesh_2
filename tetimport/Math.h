@@ -178,6 +178,13 @@ bool SameSideCPU(const float4 &v1, const float4 &v2, const float4 &v3, const flo
 	return signfCPU(dotV4) == signfCPU(dotP);
 }
 
+bool nearlysame(float a, float b)
+{
+	float _eps = 0.01;
+	if (abs(a - b) < _eps ) return true;
+	return false;
+}
+
 // ------------------------------- structure definitions -----------------------------
 
 struct BBox
@@ -219,4 +226,34 @@ struct rayhit
 	bool wall = false;
 	bool constrained = false;
 	bool dark = false; // if hit is too far away
+};
+
+struct int7
+{ // todo: rewrite this....
+	int32_t a, b, c, d, e, f, g;
+};
+
+struct mesh3
+{
+	// nodes
+	std::vector<uint32_t> n_index;
+	std::vector<float> n_x, n_y, n_z;
+	std::vector<int7> adjfaces;
+
+	//faces
+	std::vector<uint32_t> f_index;
+	std::vector<uint32_t> f_node_a, f_node_b, f_node_c;
+	std::vector<bool> na_cfaces;
+	std::vector<bool> nb_cfaces;
+	std::vector<bool> nc_cfaces;
+	std::vector<bool> face_is_wall;
+
+	// tetrahedra
+	std::vector<uint32_t> t_index;
+	std::vector<int32_t> t_findex1, t_findex2, t_findex3, t_findex4;
+	std::vector<int32_t> t_nindex1, t_nindex2, t_nindex3, t_nindex4;
+	std::vector<int32_t> t_adjtet1, t_adjtet2, t_adjtet3, t_adjtet4;
+
+	//mesh 
+	uint32_t tetnum, nodenum, facenum;
 };
