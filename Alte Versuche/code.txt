@@ -1,0 +1,86 @@
+	std::ofstream f1;
+	f1.open("point2tetlist.txt", std::ios_base::app);
+
+	for (int32_t i = 0; i < out.numberoftetrahedra; i++)
+	{
+		int t = out.neighborlist[i];
+		f1 << t << std::endl;
+	}
+
+	/*---------------------------------------------------------------------------------------------------------------------------------*/
+
+	in.firstnumber = 1;  // All indices start from 1.
+	in.numberofpoints = attrib.vertices.size() / 3; // number of nodes
+	in.pointlist = new REAL[attrib.vertices.size()];
+	for (int32_t i = 0; i < attrib.vertices.size() / 3; i++) // loop over all vertices, indepedently from number of shapes
+	{
+		in.pointlist[i * 3 + 0] = attrib.vertices[3 * i + 0];
+		in.pointlist[i * 3 + 1] = attrib.vertices[3 * i + 1];
+		in.pointlist[i * 3 + 2] = attrib.vertices[3 * i + 2];
+
+		nmesh.nodes.push_back(make_float3(nmesh.nodes.at(i).x, nmesh.nodes.at(i).y, nmesh.nodes.at(i).z));
+	}
+	tetrahedralize("fn-nn", &in, &out);
+	/*---------------------------------------------------------------------------------------------------------------------------------*/
+
+
+  //out - pointlist, tetrahedronlist, trifacelist, neighborlist, tet2facelist, face2tetlist
+
+ 'neighborlist':  An array of tetrahedron neighbors; 4 ints per element. 
+ 'tet2facelist':  An array of tetrahedron face indices; 4 ints per element.
+ 'tet2edgelist':  An array of tetrahedron edge indices; 6 ints per element.
+
+
+
+ 	mesh.facenum = out.numberoftrifaces;
+	mesh.nodenum = out.numberofpoints;
+	mesh.tetnum = out.numberoftetrahedra;
+
+	for (int i = 0; i < out.numberofpoints; i++)
+	{
+		// get nodes from pointlist to mesh3
+		float a = out.pointlist[i * 3 + 0];
+		float b = out.pointlist[i * 3 + 1];
+		float c = out.pointlist[i * 3 + 2];
+		mesh.n_x.push_back(a);
+		mesh.n_y.push_back(b);
+		mesh.n_z.push_back(c);
+		mesh.n_index.push_back(i);
+	}
+
+	for (int i = 0; i < out.numberoftetrahedra / 4; i++)
+	{
+		mesh.t_nindex1.push_back(out.tetrahedronlist[i * 4 + 0]);
+		mesh.t_nindex2.push_back(out.tetrahedronlist[i * 4 + 1]);
+		mesh.t_nindex3.push_back(out.tetrahedronlist[i * 4 + 2]);
+		mesh.t_nindex4.push_back(out.tetrahedronlist[i * 4 + 3]);
+	}
+
+
+	// this part for association of faces to tetnodes
+	std::vector<std::pair <int32_t, int32_t>> matches;
+	int counter = 0;
+	for (int32_t i = 0; i < attrib.vertices.size() / 3; i++)
+	{
+		float vx = attrib.vertices[3 * i + 0]; // these are the vertices of the original mesh
+		float vy = attrib.vertices[3 * i + 1];
+		float vz = attrib.vertices[3 * i + 2];
+		float a, b, c;
+		for (int32_t j = 0; j < out.numberofpoints / 3; j++)
+		{
+			// these are the vertices of the generated tetmesh
+			a = out.pointlist[j * 3 + 0];
+			b = out.pointlist[j * 3 + 1];
+			c = out.pointlist[j * 3 + 2];
+
+
+			if (nearlysame(vx, a) && nearlysame(vy, b) && nearlysame(vz, c))
+			{
+				//its a MATCH!!!
+				matches.push_back(std::make_pair(i, j));
+				counter++;
+			}
+
+		}
+	}
+	fprintf(stderr, "Done matching faces\n\n");

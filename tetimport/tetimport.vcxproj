@@ -23,10 +23,13 @@
     <ClInclude Include="Math.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Mesh.txt">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="mesh_io.h" />
+    <ClInclude Include="tetgenio.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>

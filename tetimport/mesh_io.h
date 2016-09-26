@@ -31,6 +31,8 @@ struct node
 	uint32_t index;
 	float x, y, z;
 	float4 f_node(){ return make_float4(x, y, z, 0); }
+	node(){}
+	node(uint32_t i, float x0, float y0, float z0) { index = i, x = x0; y = y0; z = z0; }
 };
 
 struct edge
@@ -45,6 +47,8 @@ struct face
 	uint32_t node_a, node_b, node_c;
 	bool face_is_constrained = false;
 	bool face_is_wall = false;
+	face(){}
+	face(uint32_t i, uint32_t x0, uint32_t y0, uint32_t z0) { index = i, node_a = x0; node_b = y0; node_c = z0; }
 };
 
 

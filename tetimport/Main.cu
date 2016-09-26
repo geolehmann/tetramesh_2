@@ -16,6 +16,7 @@
 #define GLEW_STATIC
 #include "Util.h"
 #include "mesh_io.h"
+#include "tetgenio.h"
 #include "Camera.h"
 #include "device_launch_parameters.h"
 #include "GLFW/glfw3.h"
@@ -24,7 +25,6 @@
 #include <curand_kernel.h>
 
 #include "Sphere.h"
-#include "Mesh.h"
 
 #define spp 1
 #define gamma 2.2f
@@ -619,8 +619,8 @@ void render()
 
 int main(int argc, char *argv[])
 {
-	mesh3 tetmesh2;
-	tetrahedralize_nodes("cornellbox_orig.obj", &tetmesh2);
+	tetrahedral_mesh testmesh;
+	testmesh.loadobj("cornellbox_orig.obj");
 
 	delete interactiveCamera;
 	interactiveCamera = new InteractiveCamera();

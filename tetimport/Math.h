@@ -228,17 +228,13 @@ struct rayhit
 	bool dark = false; // if hit is too far away
 };
 
-struct int7
-{ // todo: rewrite this....
-	int32_t a, b, c, d, e, f, g;
-};
-
 struct mesh3
 {
 	// nodes
 	std::vector<uint32_t> n_index;
 	std::vector<float> n_x, n_y, n_z;
-	std::vector<int7> adjfaces;
+	std::vector<std::vector<int32_t>> n_adj;
+	std::vector<float> n_tx, n_ty;
 
 	//faces
 	std::vector<uint32_t> f_index;
