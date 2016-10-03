@@ -16,13 +16,14 @@ Lagae, A. and Dutré, P. (2008). _Accelerating Ray Tracing using Constrained Tet
 
 Sanzenbacher, S. (2010) Darstellung von Kaustiken und Lichtstreuung in Interaktiven Anwendungen. _Unpublished diploma thesis, Institut für Visualisierung und Interaktive Systeme, University Stuttgart._
   
-**Current status (26/08/2016):**  
+**Current status (03/10/2016):**  
 
 Loading wavefront .obj nodes - done  
 Implement tetrahedralization via tetgen - done  
-
-ToDo:
-
-Associate face inidces to tetmesh nodes  
+Associate face indices to nodes - done  
+Load mesh into global memeory on GPU - done  
+  
+ToDo:  
+  
 Rewrite traversal algorithm  
 
