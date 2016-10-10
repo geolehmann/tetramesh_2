@@ -486,8 +486,18 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 
 			GetExitTet(rayo, rayd, nodes, findex, adjtets, lastface, nextface, nexttet, uvw);
 
-		//	GetExitTet2(rayo, rayd, nodes, findex, adjtets, lastface, nextface, nexttet);
 
+			int32_t nindex[4] = { mesh->t_nindex1[current_tet], mesh->t_nindex2[current_tet], mesh->t_nindex3[current_tet], mesh->t_nindex4[current_tet] };
+
+
+			/* next steps:
+			0) get faces for nodes
+			1) if d.depth == 0, then check all four nodes if they have constrained faces, if yes: do ray-triangle test
+			2) GetExitTet
+			3) check all four nodes for fonstrained
+			..
+			profit
+			*/
 
 			if (mesh->face_is_constrained[nextface] == true) { d.constrained = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet
 			if (mesh->face_is_wall[nextface] == true)		 { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet

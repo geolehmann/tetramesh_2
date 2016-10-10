@@ -281,7 +281,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 
 		// ------------------------------ SPHERE intersection --------------------------------------------
 		float4 spherePos = make_float4(10,10,10,0);
-		float sphereRad = 10, sphereDist;
+		float sphereRad = 10, sphereDist = 0;
 		bool spheresEnabled = false;	
 		if (spheresEnabled) { sphereDist = sphIntersect(originInWorldSpace, rayInWorldSpace, spherePos, sphereRad); }
 		if (sphereDist > 0.0) {	geom = SPHERE; traverse_until_point(mesh, originInWorldSpace, rayInWorldSpace, newstart, originInWorldSpace + rayInWorldSpace * sphereDist, firsthit); }
@@ -579,7 +579,7 @@ void render()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 		std::stringstream title;
-		title << "tetra_mesh (2015-2016) by Christian Lehmann";
+		title << "Tetrahedral pathtracing with node-based tetrahedral mesh (2016) by Christian Lehmann";
 		glfwSetWindowTitle(window, title.str().c_str());
 
 		// CUDA interop
@@ -619,8 +619,8 @@ void render()
 
 int main(int argc, char *argv[])
 {
-	tetrahedral_mesh testmesh;
-	testmesh.loadobj("cornellbox_orig.obj");
+	tetrahedral_mesh tetmesh;
+	tetmesh.loadobj("cornellbox_orig.obj");
 
 	delete interactiveCamera;
 	interactiveCamera = new InteractiveCamera();
@@ -636,12 +636,12 @@ int main(int argc, char *argv[])
 	prop.minor = 0;
 	cudaChooseDevice(&dev, &prop);
 
-	tetrahedra_mesh tetmesh;
+	/*tetrahedra_mesh tetmesh;
 	tetmesh.load_tet_ele("test7.1.ele");
 	tetmesh.load_tet_neigh("test7.1.neigh");
 	tetmesh.load_tet_node("test7.1.node");
 	tetmesh.load_tet_face("test7.1.face");
-	tetmesh.load_tet_t2f("test7.1.t2f");
+	tetmesh.load_tet_t2f("test7.1.t2f");*/
 
 	// ===========================
 	//     mesh2
@@ -678,6 +678,12 @@ int main(int argc, char *argv[])
 	cudaMallocManaged(&mesh->face_is_wall, mesh->facenum*sizeof(bool));
 	for (auto i : tetmesh.faces) mesh->face_is_constrained[i.index] = i.face_is_constrained;
 	for (auto i : tetmesh.faces) mesh->face_is_wall[i.index] = i.face_is_wall;
+
+	cudaMallocManaged(&mesh->adjfaces_num, mesh->nodenum*sizeof(uint32_t));
+	cudaMallocManaged(&mesh->adjfaces_numlist, tetmesh.adjfaces_numlist.size()*sizeof(uint32_t));
+	for (int i = 0; i < tetmesh.adjfaces_num.size(); i++) { mesh->adjfaces_num[i] = tetmesh.adjfaces_num.at(i); }
+	for (int i = 0; i < tetmesh.adjfaces_numlist.size(); i++) { mesh->adjfaces_numlist[i] = tetmesh.adjfaces_numlist.at(i); }
+
 
 	// TETRAHEDRA
 	cudaMallocManaged(&mesh->t_index, mesh->tetnum*sizeof(uint32_t));

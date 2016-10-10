@@ -22,6 +22,8 @@ public:
 	std::deque<face>oldfaces;
 
 	std::deque<uint32_t> adjfaces_num;
+	std::deque<uint32_t> adjfaces_numlist;
+
 	std::deque<uint32_t> adjfaces_list;
 
 	std::deque<face>faces;
@@ -43,9 +45,10 @@ void tetrahedral_mesh::loadobj(std::string filename)
 
 	std::string line, key;
 	int vertexid = 1, faceid = 0;
+	std::cout << "Started loading obj file...";
+	int linecounter = 0;
 	while (!ifs.eof() && std::getline(ifs, line)) 
 	{
-
 	key = "";
 	std::stringstream stringstream(line);
 	stringstream >> key >> std::ws;
@@ -66,10 +69,16 @@ void tetrahedral_mesh::loadobj(std::string filename)
 			oldfaces.push_back(face(faceid, x, y, z)); faceid++;
 		}
 	}
+	linecounter++;
+	if (linecounter == 100000) { std::cout << "Processed 100.000 lines"; linecounter = 0; }
 	}
 
 	tetgenio in, out;
 	in.numberofpoints = vertexid - 1;
+
+	nodenum = in.numberofpoints;
+	facenum = nodenum / 3;
+
 	in.pointlist = new REAL[in.numberofpoints * 3];
 	for (int32_t i = 0; i < in.numberofpoints; i++)
 	{
@@ -88,13 +97,14 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	for (int i = 0; i < out.numberoftetrahedra; i++)
 	{
 		tetrahedra t;
+		t.number = i;
 		t.nindex1 = out.tetrahedronlist[i * 4 + 0];
 		t.nindex2 = out.tetrahedronlist[i * 4 + 1];
 		t.nindex3 = out.tetrahedronlist[i * 4 + 2];
 		t.nindex4 = out.tetrahedronlist[i * 4 + 3];
 		tetrahedras.push_back(t);
 	}
-
+	tetnum = out.numberoftetrahedra;
 	// assign neighbors to each tet
 	for (int i = 0; i < out.numberoftetrahedra; i++)
 	{
@@ -120,6 +130,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		f.node_a = out.trifacelist[i * 3 + 0];
 		f.node_b = out.trifacelist[i * 3 + 1];
 		f.node_c = out.trifacelist[i * 3 + 2];
+		f.index = i;
 		faces.push_back(f);
 	}
 
@@ -131,5 +142,30 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		adjfaces_list.push_back(oldfaces.at(i).node_c);
 	}
 
+	std::vector<std::vector<int32_t>> nodes_adj;
+	nodes_adj.resize(in.numberofpoints + 1);
+	
+	for (int i = 0; i < adjfaces_list.size() / 3; i++)
+	{
+		nodes_adj.at(adjfaces_list.at(i * 3 + 0)).push_back(i);
+		nodes_adj.at(adjfaces_list.at(i * 3 + 1)).push_back(i);
+		nodes_adj.at(adjfaces_list.at(i * 3 + 2)).push_back(i);
+	}
 
+
+
+	//std::deque<uint32_t> adjfaces_num;
+	//std::deque<uint32_t> adjfaces_list;
+	uint32_t counter = 0;
+	for (auto nfaces : nodes_adj)
+	{
+		
+		for (auto i : nfaces)
+		{
+			adjfaces_numlist.push_back(i);
+		}
+		counter += nfaces.size();
+		adjfaces_num.push_back(counter);
+	}
+		fprintf(stderr, "Assigning face ids to node ... Done");
 }
