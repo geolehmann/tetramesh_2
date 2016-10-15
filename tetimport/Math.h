@@ -229,3 +229,4 @@ struct rayhit
 	bool constrained = false;
 	bool dark = false; // if hit is too far away
 };
+

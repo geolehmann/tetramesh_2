@@ -28,8 +28,8 @@
 
 #define spp 1
 #define gamma 2.2f
-#define MAX_DEPTH 2
-#define width 1366	
+#define MAX_DEPTH 1
+#define width 1024	
 #define height 768
 
 float3* finalimage;
@@ -303,7 +303,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 			n = normalize(n);
 			nl = Dot(n, rayInWorldSpace) < 0 ? n : n * -1;
 
-			if (firsthit.constrained == true) { emit = make_float4(0.0f, 0.0f, 0.0f, 0.0f); f = make_float4(0.75f, 0.75f, 0.75f, 0.0f); }
+			if (firsthit.constrained == true) { emit = make_float4(0.0f, 0.0f, 0.0f, 0.0f); f = make_float4(0.75f, 0.05f, 0.75f, 0.0f); }
 
 			if (firsthit.wall == true) 
 			{ 
@@ -319,7 +319,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 			}
 
 
-			if (firsthit.dark == true) { emit = make_float4(1.0f, 0.0f, 0.0f, 0.0f); f = make_float4(1.0f, 0.0f, 0.0f, 0.0f); }
+			if (firsthit.dark == true) { emit = make_float4(1.0f, 0.0f, 0.0f, 0.0f); f = make_float4(12.0f, 12.0f, 7.0f, 0.0f); }
 
 		//	if (firsthit.face == 141 || firsthit.face == 816) { emit = make_float4(12, 12, 12, 0); f = make_float4(0.0f, 0.0f, 0.0f, 0.0f); }
 
@@ -619,9 +619,6 @@ void render()
 
 int main(int argc, char *argv[])
 {
-	tetrahedral_mesh tetmesh;
-	tetmesh.loadobj("cornellbox_orig.obj");
-
 	delete interactiveCamera;
 	interactiveCamera = new InteractiveCamera();
 	interactiveCamera->setResolution(width, height);
@@ -636,16 +633,12 @@ int main(int argc, char *argv[])
 	prop.minor = 0;
 	cudaChooseDevice(&dev, &prop);
 
-	/*tetrahedra_mesh tetmesh;
-	tetmesh.load_tet_ele("test7.1.ele");
-	tetmesh.load_tet_neigh("test7.1.neigh");
-	tetmesh.load_tet_node("test7.1.node");
-	tetmesh.load_tet_face("test7.1.face");
-	tetmesh.load_tet_t2f("test7.1.t2f");*/
-
 	// ===========================
 	//     mesh2
 	// ===========================
+
+	tetrahedral_mesh tetmesh;
+	tetmesh.loadobj("cornellbox_orig.obj");
 
 	gpuErrchk(cudaMallocManaged(&mesh, sizeof(mesh2)));
 
@@ -680,8 +673,10 @@ int main(int argc, char *argv[])
 	for (auto i : tetmesh.faces) mesh->face_is_wall[i.index] = i.face_is_wall;
 
 	cudaMallocManaged(&mesh->adjfaces_num, mesh->nodenum*sizeof(uint32_t));
+	//cudaMallocManaged(&mesh->adjfaces_list, mesh->nodenum*sizeof(uint32_t));
 	cudaMallocManaged(&mesh->adjfaces_numlist, tetmesh.adjfaces_numlist.size()*sizeof(uint32_t));
 	for (int i = 0; i < tetmesh.adjfaces_num.size(); i++) { mesh->adjfaces_num[i] = tetmesh.adjfaces_num.at(i); }
+	//for (int i = 0; i < tetmesh.adjfaces_num.size(); i++) { mesh->adjfaces_list[i] = tetmesh.adjfaces_list.at(i); }
 	for (int i = 0; i < tetmesh.adjfaces_numlist.size(); i++) { mesh->adjfaces_numlist[i] = tetmesh.adjfaces_numlist.at(i); }
 
 

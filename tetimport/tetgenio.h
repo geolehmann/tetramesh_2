@@ -24,7 +24,7 @@ public:
 	std::deque<uint32_t> adjfaces_num;
 	std::deque<uint32_t> adjfaces_numlist;
 
-	std::deque<uint32_t> adjfaces_list;
+	std::deque<uint32_t> adjfaces_list; // temporary list
 
 	std::deque<face>faces;
 	std::deque<edge>edges;
@@ -44,7 +44,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	}
 
 	std::string line, key;
-	int vertexid = 1, faceid = 0;
+	int vertexid = 0, faceid = 0;
 	std::cout << "Started loading obj file...";
 	int linecounter = 0;
 	while (!ifs.eof() && std::getline(ifs, line)) 
@@ -66,7 +66,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		int x,y,z;
 		while (!stringstream.eof()) {
 			stringstream >> x >> std::ws >> y >> std::ws >> z >> std::ws;
-			oldfaces.push_back(face(faceid, x, y, z)); faceid++;
+			oldfaces.push_back(face(faceid, x-1, y-1, z-1)); faceid++;
 		}
 	}
 	linecounter++;
@@ -76,7 +76,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	tetgenio in, out;
 	in.numberofpoints = vertexid - 1;
 
-	nodenum = in.numberofpoints;
+	nodenum = in.numberofpoints + 1;
 	facenum = nodenum / 3;
 
 	in.pointlist = new REAL[in.numberofpoints * 3];
@@ -86,7 +86,13 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		in.pointlist[i * 3 + 1] = nodes.at(i).y;
 		in.pointlist[i * 3 + 2] = nodes.at(i).z;
 	}
-	tetrahedralize("fn-nn", &in, &out);
+	tetrahedralize("fzn-nn", &in, &out);
+	out.save_faces("debug");
+	out.save_elements("debug");
+	out.save_nodes("debug");
+	out.save_neighbors("debug");
+	//out.save_faces2smesh("debug");
+
 
 	// jetzt zuordnung zu tetgen
 	// 1. nodes to tets - done
@@ -124,12 +130,13 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	}
 
 	// assign nodes to faces
-	for (int32_t i = 0; i < out.numberoftrifaces; i++)
+	for (int32_t i = 0; i < out.numberoftrifaces-1; i++)
 	{
 		face f;
 		f.node_a = out.trifacelist[i * 3 + 0];
 		f.node_b = out.trifacelist[i * 3 + 1];
 		f.node_c = out.trifacelist[i * 3 + 2];
+		f.face_is_constrained = true;
 		f.index = i;
 		faces.push_back(f);
 	}
@@ -145,13 +152,12 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	std::vector<std::vector<int32_t>> nodes_adj;
 	nodes_adj.resize(in.numberofpoints + 1);
 	
-	for (int i = 0; i < adjfaces_list.size() / 3; i++)
+	for (int i = 0; i < oldfaces.size(); i++)
 	{
 		nodes_adj.at(adjfaces_list.at(i * 3 + 0)).push_back(i);
 		nodes_adj.at(adjfaces_list.at(i * 3 + 1)).push_back(i);
 		nodes_adj.at(adjfaces_list.at(i * 3 + 2)).push_back(i);
 	}
-
 
 
 	//std::deque<uint32_t> adjfaces_num;
@@ -164,8 +170,9 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		{
 			adjfaces_numlist.push_back(i);
 		}
-		counter += nfaces.size();
 		adjfaces_num.push_back(counter);
+		counter += nfaces.size();
 	}
-		fprintf(stderr, "Assigning face ids to node ... Done");
+	facenum = out.numberoftrifaces;
+	fprintf(stderr, "Assigning face ids to node ... Done");
 }
