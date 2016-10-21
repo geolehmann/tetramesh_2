@@ -506,7 +506,7 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 	bool hitfound = false, edgeFound=false;
 	float4 uvw;
 
-	for (d.depth = 0; d.depth < 150; d.depth++)
+	for (d.depth = 0; d.depth < 350; d.depth++)
 	{
 		if (!hitfound)
 		{
@@ -527,6 +527,7 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 											  mesh->adjfaces_num[mesh->t_nindex3[current_tet]+1] - mesh->adjfaces_num[mesh->t_nindex3[current_tet]], 
 											  mesh->adjfaces_num[mesh->t_nindex4[current_tet]+1] - mesh->adjfaces_num[mesh->t_nindex4[current_tet]]);
 
+			GetExitTet(rayo, rayd, nodes, findex, adjtets, lastface, nextface, nexttet, uvw);
 
 			// loop over four nodes and check if constrained
 			for (int i = 0; i < numbers_per_node.x; i++) 
@@ -545,8 +546,6 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 			{ 
 				if (mesh->face_is_constrained[mesh->adjfaces_numlist[position_in_list.w + i]]) if (RayTriangleIntersection(mesh, Ray(rayo, rayd), mesh->adjfaces_numlist[position_in_list.w + i]) > 0.0f) { hitfound = true; d.face = mesh->adjfaces_numlist[position_in_list.w + i]; d.constrained = true; d.tet = current_tet;} 
 			}
-
-			if (!hitfound) GetExitTet(rayo, rayd, nodes, findex, adjtets, lastface, nextface, nexttet, uvw);
 
 			//if (mesh->face_is_constrained[nextface] == true) { d.constrained = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet
 			//if (mesh->face_is_wall[nextface] == true)		 { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet

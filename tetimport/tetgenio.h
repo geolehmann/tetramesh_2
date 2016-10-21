@@ -45,7 +45,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 
 	std::string line, key;
 	int vertexid = 0, faceid = 0;
-	std::cout << "Started loading obj file...";
+	std::cout << "Started loading obj file " << filename <<". \n";
 	int linecounter = 0;
 	while (!ifs.eof() && std::getline(ifs, line)) 
 	{
@@ -70,10 +70,10 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		}
 	}
 	linecounter++;
-	if (linecounter == 100000) { std::cout << "Processed 100.000 lines"; linecounter = 0; }
+	if (linecounter == 100000) { std::cout << "Processed 100.000 lines\n"; linecounter = 0; }
 	}
 
-	tetgenio in, out;
+	tetgenio in, tmp, out;
 	in.numberofpoints = vertexid - 1;
 
 	nodenum = in.numberofpoints + 1;
@@ -86,20 +86,18 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		in.pointlist[i * 3 + 1] = nodes.at(i).y;
 		in.pointlist[i * 3 + 2] = nodes.at(i).z;
 	}
-	tetrahedralize("fzn-nn", &in, &out);
+	fprintf(stderr, "Starting tetrahedralization..\n");
+	tetrahedralize("nfznn", &in, &tmp);
+	tmp.save_faces("temp");
+	tmp.save_elements("temp");
+	tmp.save_nodes("temp");
+	tmp.save_neighbors("temp");
+	tetrahedralize("rqnfnnzA", &tmp, &out);
 	out.save_faces("debug");
 	out.save_elements("debug");
 	out.save_nodes("debug");
 	out.save_neighbors("debug");
-	//out.save_faces2smesh("debug");
 
-
-	// jetzt zuordnung zu tetgen
-	// 1. nodes to tets - done
-	// 2. neighbors to tets - done
-	// 3. nodes to faces - done
-	// 4. faces to tets - done
-	// 5. orig_faces to nodes
 	for (int i = 0; i < out.numberoftetrahedra; i++)
 	{
 		tetrahedra t;
