@@ -87,16 +87,16 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		in.pointlist[i * 3 + 2] = nodes.at(i).z;
 	}
 	fprintf(stderr, "Starting tetrahedralization..\n");
-	tetrahedralize("nfznn", &in, &tmp);
-	tmp.save_faces("temp");
-	tmp.save_elements("temp");
-	tmp.save_nodes("temp");
-	tmp.save_neighbors("temp");
-	tetrahedralize("rqnfnnzA", &tmp, &out);
-	out.save_faces("debug");
-	out.save_elements("debug");
-	out.save_nodes("debug");
-	out.save_neighbors("debug");
+	tetrahedralize("nfznn", &in, &tmp); // first tetrahedralization of the vertices
+	tmp.save_faces("tmp");
+	tmp.save_elements("tmp");
+	tmp.save_nodes("tmp");
+	tmp.save_neighbors("tmp");
+	tetrahedralize("rqnfnnzA", &tmp, &out); //2nd step - refinement of the mesh.
+	out.save_faces("out");
+	out.save_elements("out");
+	out.save_nodes("out");
+	out.save_neighbors("out");
 
 	for (int i = 0; i < out.numberoftetrahedra; i++)
 	{
@@ -128,49 +128,26 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	}
 
 	// assign nodes to faces
-	for (int32_t i = 0; i < out.numberoftrifaces-1; i++)
-	{
-		face f;
-		f.node_a = out.trifacelist[i * 3 + 0];
-		f.node_b = out.trifacelist[i * 3 + 1];
-		f.node_c = out.trifacelist[i * 3 + 2];
-		f.face_is_constrained = true;
-		f.index = i;
-		faces.push_back(f);
-	}
-
-	// assign old faces to new nodes
-	for (int i = 0; i < oldfaces.size();i++)
-	{
-		adjfaces_list.push_back(oldfaces.at(i).node_a); // now: find cuda equivalent for std::vector
-		adjfaces_list.push_back(oldfaces.at(i).node_b);
-		adjfaces_list.push_back(oldfaces.at(i).node_c);
-	}
-
-	std::vector<std::vector<int32_t>> nodes_adj;
-	nodes_adj.resize(in.numberofpoints + 1);
-	
 	for (int i = 0; i < oldfaces.size(); i++)
 	{
-		nodes_adj.at(adjfaces_list.at(i * 3 + 0)).push_back(i);
-		nodes_adj.at(adjfaces_list.at(i * 3 + 1)).push_back(i);
-		nodes_adj.at(adjfaces_list.at(i * 3 + 2)).push_back(i);
-	}
-
-
-	//std::deque<uint32_t> adjfaces_num;
-	//std::deque<uint32_t> adjfaces_list;
-	uint32_t counter = 0;
-	for (auto nfaces : nodes_adj)
-	{
-		
-		for (auto i : nfaces)
+		for (int j = 0; j < out.numberoftetrahedra; j++)
 		{
-			adjfaces_numlist.push_back(i);
+			int32_t n0 = oldfaces.at(i).node_a;
+			int32_t n1 = oldfaces.at(i).node_b;
+			int32_t n2 = oldfaces.at(i).node_c;
+			float4 v0 = make_float4(nodes.at(n0).x, nodes.at(n0).y, nodes.at(n0).z, 0);
+			float4 v1 = make_float4(nodes.at(n1).x, nodes.at(n1).y, nodes.at(n1).z, 0);
+			float4 v2 = make_float4(nodes.at(n2).x, nodes.at(n2).y, nodes.at(n2).z, 0);
+			Ray r1 = Ray(v0, v1 - v0);
+			Ray r2 = Ray(v0, v2 - v0);
+			Ray r3 = Ray(v1, v2 - v1); // now we have the three edges of the current face as rays
+
+
+
+
 		}
-		adjfaces_num.push_back(counter);
-		counter += nfaces.size();
 	}
-	facenum = out.numberoftrifaces;
-	fprintf(stderr, "Assigning face ids to node ... Done");
+	
 }
+
+

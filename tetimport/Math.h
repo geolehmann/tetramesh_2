@@ -185,6 +185,23 @@ bool nearlysame(float a, float b)
 	return false;
 }
 
+float RayTriangleIntersectionCPU(const Ray &r,	const float4 &v0,	const float4 &v1,	const float4 &v2)
+{
+	// from https://github.com/straaljager/GPU-path-tracing-tutorial-2/blob/master/tutorial2_cuda_pathtracer.cu
+	float4 edge1 = v1 - v0;
+	float4 edge2 = v2 - v0;
+	float4 tvec = r.o - v0;
+	float4 pvec = Cross(r.d, edge2);
+	float  det = Dot(edge1, pvec);
+	det = 1.0f / det;  // CUDA intrinsic function 
+	float u = Dot(tvec, pvec) * det;
+	if (u < 0.0f || u > 1.0f) return -1.0f;
+	float4 qvec = Cross(tvec, edge1);
+	float v = Dot(r.d, qvec) * det;
+	if (v < 0.0f || (u + v) > 1.0f)	return -1.0f;
+	return Dot(edge2, qvec) * det; // return dist or else -1
+}
+
 // ------------------------------- structure definitions -----------------------------
 
 struct BBox
