@@ -1,0 +1,46 @@
+for (int32_t i = 0; i < out.numberoftrifaces-1; i++)
+	{
+		face f;
+		f.node_a = out.trifacelist[i * 3 + 0];
+		f.node_b = out.trifacelist[i * 3 + 1];
+		f.node_c = out.trifacelist[i * 3 + 2];
+		f.face_is_constrained = true;
+		f.index = i;
+		faces.push_back(f);
+	}
+
+
+	// assign old faces to new nodes
+	for (int i = 0; i < oldfaces.size();i++)
+	{
+		adjfaces_list.push_back(oldfaces.at(i).node_a); // now: find cuda equivalent for std::vector
+		adjfaces_list.push_back(oldfaces.at(i).node_b);
+		adjfaces_list.push_back(oldfaces.at(i).node_c);
+	}
+
+	std::vector<std::vector<int32_t>> nodes_adj;
+	nodes_adj.resize(in.numberofpoints + 1);
+	
+	for (int i = 0; i < oldfaces.size(); i++)
+	{
+		nodes_adj.at(adjfaces_list.at(i * 3 + 0)).push_back(i);
+		nodes_adj.at(adjfaces_list.at(i * 3 + 1)).push_back(i);
+		nodes_adj.at(adjfaces_list.at(i * 3 + 2)).push_back(i);
+	}
+
+
+	//std::deque<uint32_t> adjfaces_num;
+	//std::deque<uint32_t> adjfaces_list;
+	uint32_t counter = 0;
+	for (auto nfaces : nodes_adj)
+	{
+		
+		for (auto i : nfaces)
+		{
+			adjfaces_numlist.push_back(i);
+		}
+		adjfaces_num.push_back(counter);
+		counter += nfaces.size();
+	}
+	facenum = out.numberoftrifaces;
+	fprintf(stderr, "Assigning face ids to node ... Done");

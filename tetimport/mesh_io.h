@@ -59,6 +59,8 @@ public:
 	int32_t findex1, findex2, findex3, findex4;
 	int32_t nindex1, nindex2, nindex3, nindex4;
 	int32_t adjtet1, adjtet2, adjtet3, adjtet4;
+	int32_t faces[9]; // lets assume max 9 faces per tet for now
+	int counter; // counter for the array
 };
 
 class tetrahedra_mesh

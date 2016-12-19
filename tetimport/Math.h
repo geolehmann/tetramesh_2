@@ -128,7 +128,7 @@ __device__ RGB de_nan(RGB &a)
 struct Ray
 {
 	float4 o, d;
-	__device__ Ray(float4 o_, float4 d_) : o(o_), d(d_) {}
+	__device__ __host__ Ray(float4 o_, float4 d_) : o(o_), d(d_) {}
 };
 
 __device__ bool nearlyzero(float a)
@@ -185,22 +185,36 @@ bool nearlysame(float a, float b)
 	return false;
 }
 
-float RayTriangleIntersectionCPU(const Ray &r,	const float4 &v0,	const float4 &v1,	const float4 &v2)
+float RayTriangleIntersectionCPU(const float4&p, const float4& q,	const float4 &v0,	const float4 &v1,	const float4 &v2)
 {
-	// from https://github.com/straaljager/GPU-path-tracing-tutorial-2/blob/master/tutorial2_cuda_pathtracer.cu
-	float4 edge1 = v1 - v0;
-	float4 edge2 = v2 - v0;
-	float4 tvec = r.o - v0;
-	float4 pvec = Cross(r.d, edge2);
-	float  det = Dot(edge1, pvec);
-	det = 1.0f / det;  // CUDA intrinsic function 
-	float u = Dot(tvec, pvec) * det;
-	if (u < 0.0f || u > 1.0f) return -1.0f;
-	float4 qvec = Cross(tvec, edge1);
-	float v = Dot(r.d, qvec) * det;
-	if (v < 0.0f || (u + v) > 1.0f)	return -1.0f;
-	return Dot(edge2, qvec) * det; // return dist or else -1
+	float t,u,v,w;
+	float4 ab = v1 - v0; 
+	float4 ac = v2 - v0; 
+	float4 qp = p - q;
+	float4 n = CrossCPU(ab, ac);
+	float d = DotCPU(qp, n); 
+	if (d <= 0.0f) return -1.0f;
+	float4 ap = p - v0; 
+	t = DotCPU(ap, n); 
+	if (t < 0.0f) return -1.0f; 
+	if (t > d) return -1.0f; 
+	float4 e = CrossCPU(qp, ap); 
+	v = DotCPU(ac, e); 
+	if (v < 0.0f || v > d) return -1.0f; 
+	w = -DotCPU(ab, e); 
+	if (w < 0.0f || v + w > d) return -1.0f;
+	return 1.0f;
 }
+
+bool RayTetIntersectionCPU(const float4 &p1, const float4 &p2, const float4 &v0, const float4 &v1, const float4 &v2, const float4 &v3)
+{
+	if (RayTriangleIntersectionCPU(p1, p2 , v0, v1, v2) > 0) return true;
+	if (RayTriangleIntersectionCPU(p1, p2 , v0, v2, v3) > 0) return true;
+	if (RayTriangleIntersectionCPU(p1, p2 , v1, v2, v3) > 0) return true;
+	if (RayTriangleIntersectionCPU(p1, p2 , v0, v1, v3) > 0) return true;
+	return false;
+}
+
 
 // ------------------------------- structure definitions -----------------------------
 

@@ -126,11 +126,17 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		tetrahedras.at(i).findex3 = out.tet2facelist[i * 4 + 2];
 		tetrahedras.at(i).findex4 = out.tet2facelist[i * 4 + 3];
 	}
-
-	// assign nodes to faces
-	for (int i = 0; i < oldfaces.size(); i++)
+	fprintf_s(stderr, "Started assigning tets to faces...\n");
+	for (int j = 0; j < out.numberoftetrahedra; j++)
 	{
-		for (int j = 0; j < out.numberoftetrahedra; j++)
+		tetrahedras.at(j).counter = 0;
+	}
+
+	// assign faces to tets
+	#pragma omp parallel for // OpenMP for parallelization
+	for (int i = 0; i < oldfaces.size(); i++) // loop over all faces
+	{
+		for (int j = 0; j < out.numberoftetrahedra; j++)  // for each face, loop over all tets
 		{
 			int32_t n0 = oldfaces.at(i).node_a;
 			int32_t n1 = oldfaces.at(i).node_b;
@@ -138,15 +144,40 @@ void tetrahedral_mesh::loadobj(std::string filename)
 			float4 v0 = make_float4(nodes.at(n0).x, nodes.at(n0).y, nodes.at(n0).z, 0);
 			float4 v1 = make_float4(nodes.at(n1).x, nodes.at(n1).y, nodes.at(n1).z, 0);
 			float4 v2 = make_float4(nodes.at(n2).x, nodes.at(n2).y, nodes.at(n2).z, 0);
-			Ray r1 = Ray(v0, v1 - v0);
-			Ray r2 = Ray(v0, v2 - v0);
-			Ray r3 = Ray(v1, v2 - v1); // now we have the three edges of the current face as rays
 
+			int32_t tn1 = tetrahedras.at(j).nindex1;
+			int32_t tn2 = tetrahedras.at(j).nindex2;
+			int32_t tn3 = tetrahedras.at(j).nindex3;
+			int32_t tn4 = tetrahedras.at(j).nindex4;
 
+			float4 tv1 = make_float4(out.pointlist[3 * tn1 + 0], out.pointlist[3 * tn1 + 1], out.pointlist[3 * tn1 + 2], 0);
+			float4 tv2 = make_float4(out.pointlist[3 * tn2 + 0], out.pointlist[3 * tn2 + 1], out.pointlist[3 * tn2 + 2], 0);
+			float4 tv3 = make_float4(out.pointlist[3 * tn3 + 0], out.pointlist[3 * tn3 + 1], out.pointlist[3 * tn3 + 2], 0);
+			float4 tv4 = make_float4(out.pointlist[3 * tn4 + 0], out.pointlist[3 * tn4 + 1], out.pointlist[3 * tn4 + 2], 0);// now we have the four vertices of the tetrahedron
 
+			if (RayTetIntersectionCPU(v0, v1, tv1, tv2, tv3, tv4) || RayTetIntersectionCPU(v0, v2, tv1, tv2, tv3, tv4) || RayTetIntersectionCPU(v1, v2, tv1, tv2, tv3, tv4))
+			{
+				// multiple saves of faces per tet??
+				// check if face is already in array
+				bool alreadythere = false;
+				for (int k = 0; k < 9; k++)
+				{
+					if (tetrahedras.at(j).faces[k] == i) alreadythere = true;
+				}
+				if (!alreadythere) 
+				{
+					tetrahedras.at(j).faces[tetrahedras.at(j).counter] = i; // tetrahedron at position 'j' gets face at 'i' assigned 
+					tetrahedras.at(j).counter = tetrahedras.at(j).counter + 1; // increase counter 
+					bool br = false;
+					if (tetrahedras.at(j).counter > 10) br = true;
+					int g = 0;
+				}
+			}
 
 		}
+		if (i == oldfaces.size()/2) fprintf_s(stderr, "50% done\n");
 	}
+	fprintf_s(stderr, "Finished assigning faces to tets!\n");
 	
 }
 
