@@ -170,12 +170,24 @@ int signfCPU(float f)
 	return 0;
 }
 
+bool sameSignCPU(float a, float b)
+{
+	if (signfCPU(a) == signfCPU(b)) return true;
+	return false;
+}
+
 bool SameSideCPU(const float4 &v1, const float4 &v2, const float4 &v3, const float4 &v4, const float4 &p)
 {
 	float4 normal = CrossCPU(v2 - v1, v3 - v1);
 	float dotV4 = DotCPU(normal, v4 - v1);
 	float dotP = DotCPU(normal, p - v1);
 	return signfCPU(dotV4) == signfCPU(dotP);
+}
+ 
+float ScTPCPU(const float4 &a, const float4 &b, const float4 &c)
+{
+	// computes scalar triple product
+	return DotCPU(a, CrossCPU(b, c));
 }
 
 bool nearlysame(float a, float b)
@@ -185,33 +197,76 @@ bool nearlysame(float a, float b)
 	return false;
 }
 
-float RayTriangleIntersectionCPU(const float4&p, const float4& q,	const float4 &v0,	const float4 &v1,	const float4 &v2)
+bool RayTriangleIntersectionCPU(const float4&p, const float4& q,	const float4 &v0,	const float4 &v1,	const float4 &v2)
 {
+/* // ray-triangle
+float u, v, w;
+float4 pq = q - p; 
+float4 pa = v0 - p; 
+float4 pb = v1 - p; 
+float4 pc = v2 - p; 
+
+float4 m = CrossCPU(pq, pc); 
+u = DotCPU(pb, m); 
+v = -DotCPU(pa, m); 
+if (!sameSignCPU(u, v)) return false; 
+w = ScTPCPU(pq, pb, pa); 
+if (!sameSignCPU(u, w)) return false;
+return true;*/
+
+	/* // segment-triangle
 	float t,u,v,w;
 	float4 ab = v1 - v0; 
 	float4 ac = v2 - v0; 
 	float4 qp = p - q;
 	float4 n = CrossCPU(ab, ac);
 	float d = DotCPU(qp, n); 
-	if (d <= 0.0f) return -1.0f;
+	if (d <= 0.0f) return false;
 	float4 ap = p - v0; 
 	t = DotCPU(ap, n); 
-	if (t < 0.0f) return -1.0f; 
-	if (t > d) return -1.0f; 
+	if (t < 0.0f) return false; 
+	if (t > d) return false; 
 	float4 e = CrossCPU(qp, ap); 
 	v = DotCPU(ac, e); 
-	if (v < 0.0f || v > d) return -1.0f; 
+	if (v < 0.0f || v > d) return false; 
 	w = -DotCPU(ab, e); 
-	if (w < 0.0f || v + w > d) return -1.0f;
-	return 1.0f;
+	if (w < 0.0f || v + w > d) return false;
+	return true;*/
+
+	// Chirkov2005 - line segment-triangle
+	// https://github.com/erich666/jgt-code/blob/master/Volume_10/Number_3/Chirkov2005/src/C2005.cpp
+	float4 org = p;
+	float4 end = q;
+	float4 e0 = v1 - v0;
+	float4 e1 = v2 - v0;
+	float4 norm = CrossCPU(e0,e1);
+	float pd = DotCPU(norm, v0);
+	float signSrc = DotCPU(norm, org) - pd;
+	float signDst = DotCPU(norm, end) - pd;
+	if(signSrc*signDst > 0.0) return false;
+	float d = signSrc/(signSrc - signDst);
+	float4 point = org + d*(end - org);
+	float4 v = point - v0;		
+	float4 av = CrossCPU(e0,v);
+	float4 vb = CrossCPU(v,e1);
+	if(DotCPU(av,vb) > 0.0)
+	{
+		float4 e2 = v1 - v2;
+		float4 v = point - v1;
+		float4 vc = CrossCPU(v,e2);
+		if(DotCPU(av,vc) > 0.0) return true;
+	}
+	return false;
+
 }
+
 
 bool RayTetIntersectionCPU(const float4 &p1, const float4 &p2, const float4 &v0, const float4 &v1, const float4 &v2, const float4 &v3)
 {
-	if (RayTriangleIntersectionCPU(p1, p2 , v0, v1, v2) > 0) return true;
-	if (RayTriangleIntersectionCPU(p1, p2 , v0, v2, v3) > 0) return true;
-	if (RayTriangleIntersectionCPU(p1, p2 , v1, v2, v3) > 0) return true;
-	if (RayTriangleIntersectionCPU(p1, p2 , v0, v1, v3) > 0) return true;
+	if (RayTriangleIntersectionCPU(p1, p2 , v0, v1, v2)) return true;
+	if (RayTriangleIntersectionCPU(p1, p2 , v0, v2, v3)) return true;
+	if (RayTriangleIntersectionCPU(p1, p2 , v1, v2, v3)) return true;
+	if (RayTriangleIntersectionCPU(p1, p2 , v0, v1, v3)) return true;
 	return false;
 }
 
@@ -225,6 +280,14 @@ struct BBox
 
 struct mesh2
 {
+	// nodes - geometry mesh
+	uint32_t *ng_index;
+	float *ng_x, *ng_y, *ng_z;
+
+	//faces - geometry mesh
+	uint32_t *fg_index;
+	uint32_t *fg_node_a, *fg_node_b, *fg_node_c;
+
 	// nodes
 	uint32_t *n_index;
 	float *n_x, *n_y, *n_z;
@@ -232,19 +295,18 @@ struct mesh2
 	//faces
 	uint32_t *f_index;
 	uint32_t *f_node_a, *f_node_b, *f_node_c;
-	bool *face_is_constrained = false;
-	bool *face_is_wall = false;
-	uint32_t* adjfaces_num;
-	uint32_t* adjfaces_numlist;
 
 	// tetrahedra
 	uint32_t *t_index;
 	int32_t *t_findex1, *t_findex2, *t_findex3, *t_findex4;
 	int32_t *t_nindex1, *t_nindex2, *t_nindex3, *t_nindex4;
 	int32_t *t_adjtet1, *t_adjtet2, *t_adjtet3, *t_adjtet4;
+	bool* hasfaces;
+	uint32_t* adjfaces_num;
+	uint32_t* adjfaces_numlist;
 
 	//mesh 
-	uint32_t tetnum, nodenum, facenum, edgenum;
+	uint32_t tetnum, nodenum, facenum, oldnodenum, oldfacenum;
 };
 
 struct rayhit

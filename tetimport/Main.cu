@@ -638,15 +638,36 @@ int main(int argc, char *argv[])
 	// ===========================
 
 	tetrahedral_mesh tetmesh;
-	tetmesh.loadobj("primitives.obj");
+	tetmesh.loadobj("simple.obj");
 
 	gpuErrchk(cudaMallocManaged(&mesh, sizeof(mesh2)));
 
 	// INDICES
-	mesh->edgenum = tetmesh.edgenum;
+	mesh->oldfacenum = tetmesh.oldfacenum;
+	mesh->oldnodenum = tetmesh.oldnodenum;
 	mesh->facenum = tetmesh.facenum;
 	mesh->nodenum = tetmesh.nodenum;
 	mesh->tetnum = tetmesh.tetnum;
+
+	// NODES - GEOMETRY MESH
+	cudaMallocManaged(&mesh->ng_index, mesh->oldnodenum*sizeof(uint32_t));
+	for (auto i : tetmesh.oldnodes) mesh->ng_index[i.index] = i.index;
+	cudaMallocManaged(&mesh->ng_x, mesh->oldnodenum*sizeof(float));
+	cudaMallocManaged(&mesh->ng_y, mesh->oldnodenum*sizeof(float));
+	cudaMallocManaged(&mesh->ng_z, mesh->oldnodenum*sizeof(float));
+	for (auto i : tetmesh.oldnodes) mesh->ng_x[i.index] = i.x;
+	for (auto i : tetmesh.oldnodes) mesh->ng_y[i.index] = i.y;
+	for (auto i : tetmesh.oldnodes) mesh->ng_z[i.index] = i.z;
+
+	// FACES - GEOMETRY MESH
+	cudaMallocManaged(&mesh->fg_index, mesh->oldfacenum*sizeof(uint32_t));
+	for (auto i : tetmesh.oldfaces) mesh->fg_index[i.index] = i.index;
+	cudaMallocManaged(&mesh->fg_node_a, mesh->oldfacenum*sizeof(uint32_t));
+	cudaMallocManaged(&mesh->fg_node_b, mesh->oldfacenum*sizeof(uint32_t));
+	cudaMallocManaged(&mesh->fg_node_c, mesh->oldfacenum*sizeof(uint32_t));
+	for (auto i : tetmesh.oldfaces) mesh->fg_node_a[i.index] = i.node_a;
+	for (auto i : tetmesh.oldfaces) mesh->fg_node_b[i.index] = i.node_b;
+	for (auto i : tetmesh.oldfaces) mesh->fg_node_c[i.index] = i.node_c;
 
 	// NODES
 	cudaMallocManaged(&mesh->n_index, mesh->nodenum*sizeof(uint32_t));
@@ -667,18 +688,14 @@ int main(int argc, char *argv[])
 	for (auto i : tetmesh.faces) mesh->f_node_a[i.index] = i.node_a;
 	for (auto i : tetmesh.faces) mesh->f_node_b[i.index] = i.node_b;
 	for (auto i : tetmesh.faces) mesh->f_node_c[i.index] = i.node_c;
-	cudaMallocManaged(&mesh->face_is_constrained, mesh->facenum*sizeof(bool));
-	cudaMallocManaged(&mesh->face_is_wall, mesh->facenum*sizeof(bool));
-	for (auto i : tetmesh.faces) mesh->face_is_constrained[i.index] = i.face_is_constrained;
-	for (auto i : tetmesh.faces) mesh->face_is_wall[i.index] = i.face_is_wall;
 
-	cudaMallocManaged(&mesh->adjfaces_num, mesh->nodenum*sizeof(uint32_t));
-	//cudaMallocManaged(&mesh->adjfaces_list, mesh->nodenum*sizeof(uint32_t));
+	// TETRAHEDRA - NEW
+	cudaMallocManaged(&mesh->adjfaces_num, tetmesh.adjfaces_num.size()*sizeof(uint32_t));
 	cudaMallocManaged(&mesh->adjfaces_numlist, tetmesh.adjfaces_numlist.size()*sizeof(uint32_t));
 	for (int i = 0; i < tetmesh.adjfaces_num.size(); i++) { mesh->adjfaces_num[i] = tetmesh.adjfaces_num.at(i); }
-	//for (int i = 0; i < tetmesh.adjfaces_num.size(); i++) { mesh->adjfaces_list[i] = tetmesh.adjfaces_list.at(i); }
 	for (int i = 0; i < tetmesh.adjfaces_numlist.size(); i++) { mesh->adjfaces_numlist[i] = tetmesh.adjfaces_numlist.at(i); }
-
+	cudaMallocManaged(&mesh->hasfaces, mesh->tetnum*sizeof(bool));
+	for (auto i : tetmesh.tetrahedras) mesh->hasfaces[i.number] = i.hasfaces;
 
 	// TETRAHEDRA
 	cudaMallocManaged(&mesh->t_index, mesh->tetnum*sizeof(uint32_t));

@@ -1,0 +1,14 @@
+	bool hit = false;
+	bool hit2 = false;
+	float4 p1 = make_float4(1.2, -0.2, 0.2, 0);
+	float4 p2 = make_float4(1.2, 0.8, 0.2, 0);
+
+	float4 v1 = make_float4(0, 0, 0, 0);
+	float4 v2 = make_float4(1, 0, 0, 0);
+	float4 v3 = make_float4(0, 1, 0, 0);
+	float4 v4 = make_float4(0, 0, 1, 0);
+
+	if (RayTriangleIntersectionCPU(p1, p2, v1, v2, v4)) hit2 = true;
+
+	if (RayTetIntersectionCPU(p1,p2,v1,v2,v3,v4)) hit = true;
+

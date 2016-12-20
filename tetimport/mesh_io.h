@@ -59,8 +59,9 @@ public:
 	int32_t findex1, findex2, findex3, findex4;
 	int32_t nindex1, nindex2, nindex3, nindex4;
 	int32_t adjtet1, adjtet2, adjtet3, adjtet4;
-	int32_t faces[9]; // lets assume max 9 faces per tet for now
-	int counter; // counter for the array
+	int32_t faces[99]; // lets assume max 99 faces per tet for now
+	int counter; // counter for position in the array
+	bool hasfaces;
 };
 
 class tetrahedra_mesh
@@ -468,7 +469,7 @@ __device__ void GetExitTet2(float4 ray_o, float4 ray_d, float4* nodes, int32_t f
 }
 
 
-__device__ float RayTriangleIntersection(mesh2 *mesh, const Ray &r,	int32_t faceid)
+__device__ float RayTriangleIntersectionMesh(mesh2 *mesh, const Ray &r,	int32_t faceid)
 {
 	// from https://github.com/straaljager/GPU-path-tracing-tutorial-2/blob/master/tutorial2_cuda_pathtracer.cu
 
@@ -500,6 +501,33 @@ __device__ float RayTriangleIntersection(mesh2 *mesh, const Ray &r,	int32_t face
 	return Dot(edge2, qvec) * det;
 }
 
+__device__ float RayTriangleIntersection(const Ray &r,	const float4& v0, const float4& v1, const float4& v2)
+{
+	// from https://github.com/straaljager/GPU-path-tracing-tutorial-2/blob/master/tutorial2_cuda_pathtracer.cu
+
+	float4 edge1 = v2 - v1;
+	float4 edge2 = v2 - v0;
+
+	float4 tvec = r.o - v0;
+	float4 pvec = Cross(r.d, edge2);
+	float  det = Dot(edge1, pvec);
+
+	det = __fdividef(1.0f, det);   
+
+	float u = Dot(tvec, pvec) * det;
+
+	if (u < 0.0f || u > 1.0f)
+		return -1.0f;
+
+	float4 qvec = Cross(tvec, edge1);
+
+	float v = Dot(r.d, qvec) * det;
+
+	if (v < 0.0f || (u + v) > 1.0f)
+		return -1.0f;
+
+	return Dot(edge2, qvec) * det;
+}
 
 __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t start, rayhit &d, double &dist, bool edgeVisualisation, bool &isEdge, float4 &normal)
 {
@@ -508,7 +536,7 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 	bool hitfound = false, edgeFound=false;
 	float4 uvw;
 
-	for (d.depth = 0; d.depth < 350; d.depth++)
+	for (d.depth = 0; d.depth < 100; d.depth++)
 	{
 		if (!hitfound)
 		{
@@ -519,39 +547,40 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 				make_float4(mesh->n_x[mesh->t_nindex2[current_tet]], mesh->n_y[mesh->t_nindex2[current_tet]], mesh->n_z[mesh->t_nindex2[current_tet]], 0),
 				make_float4(mesh->n_x[mesh->t_nindex3[current_tet]], mesh->n_y[mesh->t_nindex3[current_tet]], mesh->n_z[mesh->t_nindex3[current_tet]], 0),
 				make_float4(mesh->n_x[mesh->t_nindex4[current_tet]], mesh->n_y[mesh->t_nindex4[current_tet]], mesh->n_z[mesh->t_nindex4[current_tet]], 0) };
-			uint4 position_in_list = make_uint4(mesh->adjfaces_num[mesh->t_nindex1[current_tet]], 
-												  mesh->adjfaces_num[mesh->t_nindex2[current_tet]], 
-												  mesh->adjfaces_num[mesh->t_nindex3[current_tet]], 
-												  mesh->adjfaces_num[mesh->t_nindex4[current_tet]]);
-
-			uint4 numbers_per_node = make_uint4(mesh->adjfaces_num[mesh->t_nindex1[current_tet]+1] - mesh->adjfaces_num[mesh->t_nindex1[current_tet]], 
-											  mesh->adjfaces_num[mesh->t_nindex2[current_tet]+1] - mesh->adjfaces_num[mesh->t_nindex2[current_tet]], 
-											  mesh->adjfaces_num[mesh->t_nindex3[current_tet]+1] - mesh->adjfaces_num[mesh->t_nindex3[current_tet]], 
-											  mesh->adjfaces_num[mesh->t_nindex4[current_tet]+1] - mesh->adjfaces_num[mesh->t_nindex4[current_tet]]);
 
 			GetExitTet(rayo, rayd, nodes, findex, adjtets, lastface, nextface, nexttet, uvw);
 
-			// loop over four nodes and check if constrained
-			for (int i = 0; i < numbers_per_node.x; i++) 
-			{ 
-				if (mesh->face_is_constrained[mesh->adjfaces_numlist[position_in_list.x + i]]) if (RayTriangleIntersection(mesh, Ray(rayo, rayd), mesh->adjfaces_numlist[position_in_list.x + i]) > 0.0f) { hitfound = true; d.face = mesh->adjfaces_numlist[position_in_list.x + i]; d.constrained = true; d.tet = current_tet;}
-			}
-			for (int i = 0; i < numbers_per_node.y; i++) 
-			{ 
-				if (mesh->face_is_constrained[mesh->adjfaces_numlist[position_in_list.y + i]]) if (RayTriangleIntersection(mesh, Ray(rayo, rayd), mesh->adjfaces_numlist[position_in_list.y + i]) > 0.0f) { hitfound = true; d.face = mesh->adjfaces_numlist[position_in_list.y + i]; d.constrained = true; d.tet = current_tet;} 
-			}
-			for (int i = 0; i < numbers_per_node.z; i++) 
-			{ 
-				if (mesh->face_is_constrained[mesh->adjfaces_numlist[position_in_list.z + i]]) if (RayTriangleIntersection(mesh, Ray(rayo, rayd), mesh->adjfaces_numlist[position_in_list.z + i]) > 0.0f) { hitfound = true; d.face = mesh->adjfaces_numlist[position_in_list.z + i]; d.constrained = true; d.tet = current_tet;} 
-			}
-			for (int i = 0; i < numbers_per_node.w; i++) 
-			{ 
-				if (mesh->face_is_constrained[mesh->adjfaces_numlist[position_in_list.w + i]]) if (RayTriangleIntersection(mesh, Ray(rayo, rayd), mesh->adjfaces_numlist[position_in_list.w + i]) > 0.0f) { hitfound = true; d.face = mesh->adjfaces_numlist[position_in_list.w + i]; d.constrained = true; d.tet = current_tet;} 
+			float dist = -1.0f; // distance of intersection
+			int32_t fi = 0; // index of intersected face
+			if (mesh->hasfaces[current_tet])
+			{
+				int faces_per_tet = mesh->adjfaces_num[current_tet+1] - mesh->adjfaces_num[current_tet];
+
+				// loop over all embedded faces and check for intersection and get closest one			
+				for (int i = 0; i < faces_per_tet; i++)
+				{
+					int32_t na = mesh->fg_node_a[mesh->adjfaces_numlist[mesh->adjfaces_num[current_tet]+i]];
+					int32_t nb = mesh->fg_node_b[mesh->adjfaces_numlist[mesh->adjfaces_num[current_tet]+i]];
+					int32_t nc = mesh->fg_node_c[mesh->adjfaces_numlist[mesh->adjfaces_num[current_tet]+i]];
+	
+					float4 v1 = make_float4(mesh->ng_x[na], mesh->ng_y[na], mesh->ng_z[na], 0);
+					float4 v2 = make_float4(mesh->ng_x[nb], mesh->ng_y[nb], mesh->ng_z[nb], 0);
+					float4 v3 = make_float4(mesh->ng_x[nc], mesh->ng_y[nc], mesh->ng_z[nc], 0);
+					// CAREFUL: we need the oldfaces now!!!!!!
+					float d_new = RayTriangleIntersection(Ray(rayo, rayd), v1, v2, v3);
+					if (d_new > 0.0f && d_new > dist) { dist = d_new; fi = i; hitfound = true; }
+				}
+				if (hitfound)
+				{
+					d.face = mesh->adjfaces_numlist[current_tet + fi];
+					d.constrained = true;
+					d.tet = current_tet;
+				}
 			}
 
 			//if (mesh->face_is_constrained[nextface] == true) { d.constrained = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet
 			//if (mesh->face_is_wall[nextface] == true)		 { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet
-			if (nexttet == -1 || nextface == -1) { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // when adjacent tetrahedra is -1, ray stops
+			//if (nexttet == -1 || nextface == -1) { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // when adjacent tetrahedra is -1, ray stops
 			lastface = nextface;
 			current_tet = nexttet;
 
@@ -574,9 +603,9 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 	else 
 	{
 		//intersection algorithm
-		float4 n_a = make_float4(mesh->n_x[mesh->f_node_a[d.face]], mesh->n_y[mesh->f_node_a[d.face]], mesh->n_z[mesh->f_node_a[d.face]], 0);
-		float4 n_b = make_float4(mesh->n_x[mesh->f_node_b[d.face]], mesh->n_y[mesh->f_node_b[d.face]], mesh->n_z[mesh->f_node_b[d.face]], 0);
-		float4 n_c = make_float4(mesh->n_x[mesh->f_node_c[d.face]], mesh->n_y[mesh->f_node_c[d.face]], mesh->n_z[mesh->f_node_c[d.face]], 0);
+		float4 n_a = make_float4(mesh->ng_x[mesh->fg_node_a[d.face]], mesh->ng_y[mesh->fg_node_a[d.face]], mesh->ng_z[mesh->fg_node_a[d.face]], 0);
+		float4 n_b = make_float4(mesh->ng_x[mesh->fg_node_b[d.face]], mesh->ng_y[mesh->fg_node_b[d.face]], mesh->ng_z[mesh->fg_node_b[d.face]], 0);
+		float4 n_c = make_float4(mesh->ng_x[mesh->fg_node_c[d.face]], mesh->ng_y[mesh->fg_node_c[d.face]], mesh->ng_z[mesh->fg_node_c[d.face]], 0);
 
 		float4 e1 = n_b - n_a;
 		float4 e2 = n_c - n_a;
@@ -612,8 +641,8 @@ __device__ void traverse_until_point(mesh2 *mesh, float4 rayo, float4 rayd, int3
 
 			if (IsPointInTetrahedron(nodes[0], nodes[1], nodes[2], nodes[3], end)) { hitfound = true;d.face = nextface; d.tet = current_tet;  }
 
-			if (mesh->face_is_constrained[nextface] == true) { d.constrained = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet
-			if (mesh->face_is_wall[nextface] == true) { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet
+			//if (mesh->face_is_constrained[nextface] == true) { d.constrained = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet
+			//if (mesh->face_is_wall[nextface] == true) { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet
 			if (nexttet == -1 || nextface == -1) { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // when adjacent tetrahedra is -1, ray stops
 			lastface = nextface;
 			current_tet = nexttet;
