@@ -28,9 +28,9 @@
 
 #define spp 1
 #define gamma 2.2f
-#define MAX_DEPTH 1
-#define width 400	
-#define height 400
+#define MAX_DEPTH 2
+#define width 800	
+#define height 600
 
 float3* finalimage;
 float3* accumulatebuffer;
@@ -319,7 +319,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 			}
 
 
-			if (firsthit.dark == true) { emit = make_float4(1.0f, 0.0f, 0.0f, 0.0f); f = make_float4(120.0f, 120.0f, 700.0f, 0.0f); /*printf("Éncountered dark state\n");*/ }
+			if (firsthit.dark == true) { emit = make_float4(0.0f, 1.0f, 0.0f, 0.0f); f = make_float4(120.0f, 120.0f, 700.0f, 0.0f); /*printf("Éncountered dark state\n");*/ }
 
 		//	if (firsthit.face == 141 || firsthit.face == 816) { emit = make_float4(12, 12, 12, 0); f = make_float4(0.0f, 0.0f, 0.0f, 0.0f); }
 
@@ -638,7 +638,7 @@ int main(int argc, char *argv[])
 	// ===========================
 
 	tetrahedral_mesh tetmesh;
-	tetmesh.loadobj("simple.obj");
+	tetmesh.loadobj("primitives.obj");
 
 	gpuErrchk(cudaMallocManaged(&mesh, sizeof(mesh2)));
 

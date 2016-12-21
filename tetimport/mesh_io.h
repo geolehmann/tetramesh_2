@@ -565,14 +565,14 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 	
 					float4 v1 = make_float4(mesh->ng_x[na], mesh->ng_y[na], mesh->ng_z[na], 0);
 					float4 v2 = make_float4(mesh->ng_x[nb], mesh->ng_y[nb], mesh->ng_z[nb], 0);
-					float4 v3 = make_float4(mesh->ng_x[nc], mesh->ng_y[nc], mesh->ng_z[nc], 0);
+					float4 v3 = make_float4(mesh->ng_x[nc], mesh->ng_y[nc], mesh->ng_z[nc], 0); // check this - is this correcht ??????
 					// CAREFUL: we need the oldfaces now!!!!!!
 					float d_new = RayTriangleIntersection(Ray(rayo, rayd), v1, v2, v3);
 					if (d_new > 0.0f && d_new > dist) { dist = d_new; fi = i; hitfound = true; }
 				}
 				if (hitfound)
 				{
-					d.face = mesh->adjfaces_numlist[current_tet + fi];
+					d.face = mesh->adjfaces_numlist[mesh->adjfaces_num[current_tet]+ fi];
 					d.constrained = true;
 					d.tet = current_tet;
 				}
@@ -580,7 +580,7 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 
 			//if (mesh->face_is_constrained[nextface] == true) { d.constrained = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet
 			//if (mesh->face_is_wall[nextface] == true)		 { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet
-			//if (nexttet == -1 || nextface == -1) { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // when adjacent tetrahedra is -1, ray stops
+			if (nexttet == -1 || nextface == -1) { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // when adjacent tetrahedra is -1, ray stops
 			lastface = nextface;
 			current_tet = nexttet;
 

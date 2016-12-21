@@ -131,7 +131,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	}
 
 	// assign tetrahedralization nodes to nodelist
-	for (int i = 0; i < out.numberoftetrahedra; i++)
+	for (int i = 0; i < nodenum; i++)
 	{
 		float4 n = make_float4(out.pointlist[3 * i + 0], out.pointlist[3 * i + 1], out.pointlist[3 * i + 2], 0);
 		nodes.push_back(node(i, n.x, n.y, n.z));
@@ -183,7 +183,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		}
 		if (i == (int)oldfaces.size()/4) fprintf_s(stderr, "25%% done\n");
 		if (i == (int)oldfaces.size()/2) fprintf_s(stderr, "50%% done\n");
-		if (i == (int)oldfaces.size()/0.75) fprintf_s(stderr, "75%% done\n");
+		if (i == (int)oldfaces.size()*4/3) fprintf_s(stderr, "75%% done\n");
 	}
 	fprintf_s(stderr, "Finished assigning faces to tets!\n");
 
