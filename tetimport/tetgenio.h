@@ -9,6 +9,7 @@
 #include <deque>
 #include "Math.h"
 #include"mesh_io.h"
+#include "Intersections.h"
 
 #define TETLIBRARY
 #include "tetgen.h"
@@ -164,7 +165,27 @@ void tetrahedral_mesh::loadobj(std::string filename)
 			float4 tv3 = make_float4(out.pointlist[3 * tn3 + 0], out.pointlist[3 * tn3 + 1], out.pointlist[3 * tn3 + 2], 0);
 			float4 tv4 = make_float4(out.pointlist[3 * tn4 + 0], out.pointlist[3 * tn4 + 1], out.pointlist[3 * tn4 + 2], 0);// now we have the four vertices of the tetrahedron
 
-			if (RayTetIntersectionCPU(v0, v1, tv1, tv2, tv3, tv4) || RayTetIntersectionCPU(v0, v2, tv1, tv2, tv3, tv4) || RayTetIntersectionCPU(v1, v2, tv1, tv2, tv3, tv4))
+			
+			// tr_tri_intersect3D (double *C1, double *P1, double *P2, double *D1, double *Q1, double *Q2)
+			double av0[3] = { v0.x, v0.y, v0.z };
+			double ae1[3] = { v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
+			double ae2[3] = { v2.x - v0.x, v2.y - v0.y, v2.z - v0.z };
+			double atv1[3] = { tv1.x, tv1.y, tv1.z };
+			double atv2[3] = { tv2.x, tv2.y, tv2.z };
+			double atv3[3] = { tv3.x, tv3.y, tv3.z };  // 1,2,3		1,3,4		1,2,4		2,3,4
+			double atv4[3] = { tv4.x, tv4.y, tv4.z };
+
+			double aev1[3] = { tv2.x - tv1.x, tv2.y - tv1.y, tv2.z - tv1.z };
+			double aev2[3] = { tv3.x - tv1.x, tv3.y - tv1.y, tv3.z - tv1.z };
+
+			double aev3[3] = { tv3.x - tv1.x, tv3.y - tv1.y, tv3.z - tv1.z };
+			double aev4[3] = { tv4.x - tv1.x, tv4.y - tv1.y, tv4.z - tv1.z };
+
+			double aev5[3] = { tv3.x - tv2.x, tv3.y - tv2.y, tv3.z - tv2.z };
+			double aev6[3] = { tv4.x - tv2.x, tv4.y - tv2.y, tv4.z - tv2.z };
+
+			if (tr_tri_intersect3D(av0,ae1,ae2,atv1,aev1,aev2) != 0 || tr_tri_intersect3D(av0,ae1,ae2,atv1,aev3,aev4) != 0 || tr_tri_intersect3D(av0,ae1,ae2,atv1,aev1,aev4) != 0 || tr_tri_intersect3D(av0,ae1,ae2,atv2,aev5,aev6) != 0)
+			//if (RayTetIntersectionCPU(v0, v1, tv1, tv2, tv3, tv4) || RayTetIntersectionCPU(v0, v2, tv1, tv2, tv3, tv4) || RayTetIntersectionCPU(v1, v2, tv1, tv2, tv3, tv4))
 			{
 				tetrahedras.at(j).hasfaces = true;
 				// check if face is already in array
@@ -183,7 +204,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		}
 		if (i == (int)oldfaces.size()/4) fprintf_s(stderr, "25%% done\n");
 		if (i == (int)oldfaces.size()/2) fprintf_s(stderr, "50%% done\n");
-		if (i == (int)oldfaces.size()*4/3) fprintf_s(stderr, "75%% done\n");
+		if (i == (int)oldfaces.size()*1.333) fprintf_s(stderr, "75%% done\n");
 	}
 	fprintf_s(stderr, "Finished assigning faces to tets!\n");
 

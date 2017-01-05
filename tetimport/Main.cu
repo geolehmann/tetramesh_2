@@ -28,7 +28,7 @@
 
 #define spp 1
 #define gamma 2.2f
-#define MAX_DEPTH 2
+#define MAX_DEPTH 1
 #define width 800	
 #define height 600
 

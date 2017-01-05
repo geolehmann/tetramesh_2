@@ -536,7 +536,7 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 	bool hitfound = false, edgeFound=false;
 	float4 uvw;
 
-	for (d.depth = 0; d.depth < 100; d.depth++)
+	for (d.depth = 0; d.depth < 150; d.depth++)
 	{
 		if (!hitfound)
 		{
