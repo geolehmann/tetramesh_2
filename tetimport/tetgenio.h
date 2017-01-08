@@ -204,7 +204,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		}
 		if (i == (int)oldfaces.size()/4) fprintf_s(stderr, "25%% done\n");
 		if (i == (int)oldfaces.size()/2) fprintf_s(stderr, "50%% done\n");
-		if (i == (int)oldfaces.size()*1.333) fprintf_s(stderr, "75%% done\n");
+		if (i == (int)oldfaces.size()*3/4) fprintf_s(stderr, "75%% done\n");
 	}
 	fprintf_s(stderr, "Finished assigning faces to tets!\n");
 

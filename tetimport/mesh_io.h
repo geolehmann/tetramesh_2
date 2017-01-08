@@ -552,8 +552,8 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 
 			float dist = -1.0f; // distance of intersection
 			int32_t fi = 0; // index of intersected face
-			if (mesh->hasfaces[current_tet])
-			{
+			//if (mesh->hasfaces[current_tet]) // check all tets for now
+			//{
 				int faces_per_tet = mesh->adjfaces_num[current_tet+1] - mesh->adjfaces_num[current_tet];
 
 				// loop over all embedded faces and check for intersection and get closest one			
@@ -565,10 +565,10 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 	
 					float4 v1 = make_float4(mesh->ng_x[na], mesh->ng_y[na], mesh->ng_z[na], 0);
 					float4 v2 = make_float4(mesh->ng_x[nb], mesh->ng_y[nb], mesh->ng_z[nb], 0);
-					float4 v3 = make_float4(mesh->ng_x[nc], mesh->ng_y[nc], mesh->ng_z[nc], 0); // check this - is this correcht ??????
+					float4 v3 = make_float4(mesh->ng_x[nc], mesh->ng_y[nc], mesh->ng_z[nc], 0); // check this - is this correct ??????
 					// CAREFUL: we need the oldfaces now!!!!!!
 					float d_new = RayTriangleIntersection(Ray(rayo, rayd), v1, v2, v3);
-					if (d_new > 0.0f && d_new > dist) { dist = d_new; fi = i; hitfound = true; }
+					if (/*d_new > 0.0f && */d_new > dist) { dist = d_new; fi = i; hitfound = true; }
 				}
 				if (hitfound)
 				{
@@ -576,11 +576,9 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 					d.constrained = true;
 					d.tet = current_tet;
 				}
-			}
+			//}
 
-			//if (mesh->face_is_constrained[nextface] == true) { d.constrained = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet
-			//if (mesh->face_is_wall[nextface] == true)		 { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // vorher tet = nexttet
-			if (nexttet == -1 || nextface == -1) { d.wall = true; d.face = nextface; d.tet = current_tet; hitfound = true; } // when adjacent tetrahedra is -1, ray stops
+			if (nexttet == -1 || nextface == -1) { d.wall = true; d.constrained = false;  d.face = nextface; d.tet = current_tet; hitfound = true; } // when adjacent tetrahedra is -1, ray stops
 			lastface = nextface;
 			current_tet = nexttet;
 

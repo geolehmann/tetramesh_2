@@ -28,7 +28,7 @@
 
 #define spp 1
 #define gamma 2.2f
-#define MAX_DEPTH 1
+#define MAX_DEPTH 2
 #define width 800	
 #define height 600
 
@@ -126,7 +126,7 @@ void updateCamPos()
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	int dist = 1.0;
+	float dist = 0.3; // skipping tetras if set too high...
 
 	if (action == GLFW_PRESS) buttonActive = true;
 	if (action == GLFW_RELEASE) buttonActive = false;
@@ -303,23 +303,23 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 			n = normalize(n);
 			nl = Dot(n, rayInWorldSpace) < 0 ? n : n * -1;
 
-			if (firsthit.constrained == true) { emit = make_float4(0.0f, 0.0f, 0.0f, 0.0f); f = make_float4(0.75f, 0.05f, 0.75f, 0.0f); }
+			if (firsthit.constrained == true) { emit = make_float4(0.0f, 0.0f, 0.0f, 0.0f); f = make_float4(0.75f, 0.0f, 0.75f, 0.0f); } // yellow is constrained
 
 			if (firsthit.wall == true) 
 			{ 
-				emit = make_float4(0.3f, 0.3f, 0.3f, 0.0f); 
-				f = make_float4(0.2f, 0.8f, 0.8f, 0.2f); 
-				float4 color1 = make_float4(0, 0, 0, 0);
+				emit = make_float4(10.0f, 5.0f, 3.0f, 0.0f); // wall wird erkannt
+				f = make_float4(0.0f, 0.1f, 0.0f, 0.0f); 
+				/*float4 color1 = make_float4(0, 0, 0, 0);
 				float4 color2 = make_float4(0.0f, 1.0f, 1.0f, 0);
 				float percent = (((rayInWorldSpace.y + 1) * (1 - 0)) / (1 + 1)) + 0;
 				float red = color1.x + percent * (color2.x - color1.x);
 				float green = color1.y + percent * (color2.y - color1.y);
 				float blue = color1.z + percent * (color2.z - color1.z);
-				f = make_float4(red, green, blue, 0);
+				f = make_float4(red, green, blue, 0);*/
 			}
 
-
-			if (firsthit.dark == true) { emit = make_float4(0.0f, 1.0f, 0.0f, 0.0f); f = make_float4(120.0f, 120.0f, 700.0f, 0.0f); /*printf("Éncountered dark state\n");*/ }
+			// dark ist weiß
+			if (firsthit.dark == true) { emit = make_float4(12.0f, 12.0f, 7.0f, 0.0f); f = make_float4(0.0f, 1.0f, 0.0f, 0.0f); /*printf("Éncountered dark state\n");*/ }
 
 		//	if (firsthit.face == 141 || firsthit.face == 816) { emit = make_float4(12, 12, 12, 0); f = make_float4(0.0f, 0.0f, 0.0f, 0.0f); }
 
