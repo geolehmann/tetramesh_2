@@ -144,6 +144,16 @@ __device__ float dist(float4 a, float4 b)
 
 // ----------------------- non-CUDA math -----------------------
 
+inline float4 minCPU(const float4& a, const float4& b) 
+{
+	return make_float4(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z), std::min(a.w, b.w));
+}
+
+inline float4 maxCPU(const float4& a, const float4& b) 
+{
+	return make_float4(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z), std::max(a.w, b.w));
+}
+
 float4 normalizeCPU(const float4 &a)
 {
 	float f = 1/sqrtf(a.x*a.x + a.y*a.y + a.z*a.z);

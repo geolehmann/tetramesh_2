@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include <sstream>
 #include <vector>
 #include <deque>
@@ -341,16 +342,25 @@ __global__ void GetTetrahedraFromPoint(mesh2* mesh, float4 p)
 BBox init_BBox(mesh2* mesh)
 {
 	BBox boundingbox;
-	boundingbox.min = make_float4(-inf, -inf, -inf, 0);
-	boundingbox.max = make_float4(inf, inf, inf, 0);
+	boundingbox.min = make_float4(0, 0, 0, 0);
+	boundingbox.max = make_float4(0, 0, 0, 0);
 	for (uint32_t i = 0; i < mesh->nodenum; i++)
 	{
-		if (boundingbox.min.x < mesh->n_x[i])  boundingbox.min.x = mesh->n_x[i];
-		if (boundingbox.max.x > mesh->n_x[i])  boundingbox.max.x = mesh->n_x[i];
-		if (boundingbox.min.y < mesh->n_y[i])  boundingbox.min.y = mesh->n_y[i];
-		if (boundingbox.max.y > mesh->n_y[i])  boundingbox.max.y = mesh->n_y[i];
-		if (boundingbox.min.z < mesh->n_z[i])  boundingbox.min.z = mesh->n_z[i];
-		if (boundingbox.max.z > mesh->n_z[i])  boundingbox.max.z = mesh->n_z[i];
+		boundingbox.min = minCPU(boundingbox.min, make_float4(mesh->n_x[i], mesh->n_y[i], mesh->n_z[i], 0));
+		boundingbox.max = maxCPU(boundingbox.max, make_float4(mesh->n_x[i], mesh->n_y[i], mesh->n_z[i], 0));
+	}
+	return boundingbox;
+}
+
+BBox init_BBox(std::deque<node>* nodes)
+{
+	BBox boundingbox;
+	boundingbox.min = make_float4(0, 0, 0, 0);
+	boundingbox.max = make_float4(0, 0, 0, 0);
+	for (uint32_t i = 0; i < nodes->size(); i++)
+	{
+		boundingbox.min = minCPU(boundingbox.min, make_float4(nodes->at(i).x,nodes->at(i).y,nodes->at(i).z,0));
+		boundingbox.max = maxCPU(boundingbox.max, make_float4(nodes->at(i).x,nodes->at(i).y,nodes->at(i).z,0));
 	}
 	return boundingbox;
 }
@@ -550,7 +560,7 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 
 			GetExitTet(rayo, rayd, nodes, findex, adjtets, lastface, nextface, nexttet, uvw);
 
-			float dist = -1.0f; // distance of intersection
+			float dist = 9999999.9f; // distance of intersection
 			int32_t fi = 0; // index of intersected face
 			//if (mesh->hasfaces[current_tet]) // check all tets for now
 			//{
@@ -568,7 +578,7 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 					float4 v3 = make_float4(mesh->ng_x[nc], mesh->ng_y[nc], mesh->ng_z[nc], 0); // check this - is this correct ??????
 					// CAREFUL: we need the oldfaces now!!!!!!
 					float d_new = RayTriangleIntersection(Ray(rayo, rayd), v1, v2, v3);
-					if (/*d_new > 0.0f && */d_new > dist) { dist = d_new; fi = i; hitfound = true; }
+					if (d_new < dist && d_new > 0.0001) { dist = d_new; fi = i; hitfound = true; } // do we get the closest triangle? - no!!!
 				}
 				if (hitfound)
 				{
