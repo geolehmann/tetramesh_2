@@ -94,7 +94,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	}
 
 	tetgenio in, tmp, out;
-	in.numberofpoints = vertexid+8;
+	in.numberofpoints = vertexid + 8; // 8 vertices from BBox
 
 	oldnodenum = in.numberofpoints;
 	oldfacenum = oldfaces.size();
@@ -194,7 +194,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		nodes.push_back(node(i, n.x, n.y, n.z));
 	}
 
-	// set in each tetrahedron the counter to zero
+	// set counter in each tetrahedron to zero
 	for (int j = 0; j < out.numberoftetrahedra; j++)
 	{
 		tetrahedras.at(j).counter = 0;

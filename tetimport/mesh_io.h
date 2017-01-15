@@ -562,17 +562,16 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 
 			float dist = 9999999.9f; // distance of intersection
 			int32_t fi = 0; // index of intersected face
-			//if (mesh->hasfaces[current_tet]) // check all tets for now
-			//{
-				int faces_per_tet = mesh->adjfaces_num[current_tet+1] - mesh->adjfaces_num[current_tet];
 
-				// loop over all embedded faces and check for intersection and get closest one			
-				for (int i = 0; i < faces_per_tet; i++)
+			int faces_per_tet = mesh->adjfaces_num[current_tet+1] - mesh->adjfaces_num[current_tet];
+
+			// loop over all embedded faces and check for intersection and get closest one			
+			for (int i = 0; i < faces_per_tet; i++) // important observation -> even when looping over all faces, still same problems
 				{
 					int32_t na = mesh->fg_node_a[mesh->adjfaces_numlist[mesh->adjfaces_num[current_tet]+i]];
 					int32_t nb = mesh->fg_node_b[mesh->adjfaces_numlist[mesh->adjfaces_num[current_tet]+i]];
 					int32_t nc = mesh->fg_node_c[mesh->adjfaces_numlist[mesh->adjfaces_num[current_tet]+i]];
-	
+
 					float4 v1 = make_float4(mesh->ng_x[na], mesh->ng_y[na], mesh->ng_z[na], 0);
 					float4 v2 = make_float4(mesh->ng_x[nb], mesh->ng_y[nb], mesh->ng_z[nb], 0);
 					float4 v3 = make_float4(mesh->ng_x[nc], mesh->ng_y[nc], mesh->ng_z[nc], 0); // check this - is this correct ??????
