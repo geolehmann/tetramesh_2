@@ -61,7 +61,7 @@ InteractiveCamera::InteractiveCamera()
 	//centerPosition = make_float4(6.0f, 43.0f, 21.0f, 0); // for cornellbox_orig.stl
 	//centerPosition = make_float4(22.0f, 64.0f, 35.0f, 0); // for cornellbox_extended
 	//centerPosition = make_float4(0.0f, 0.0f, 70000.0f, 0);
-	centerPosition = make_float4(-1.304f, 1.664f, -1.479f, 0);
+	centerPosition = make_float4(0.0f, 0.0f, 0.0f, 0);
 	yaw = -40.0;
 	pitch = 0.0;
 	radius = 4;

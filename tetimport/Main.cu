@@ -28,7 +28,7 @@
 
 #define spp 1
 #define gamma 2.2f
-#define MAX_DEPTH 2
+#define MAX_DEPTH 1
 #define width 800	
 #define height 600
 
@@ -307,7 +307,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 
 			if (firsthit.wall == true) 
 			{ 
-				emit = make_float4(10.0f, 5.0f, 3.0f, 0.0f); // wall wird erkannt
+				emit = make_float4(7.0f, 5.0f, 3.0f, 0.0f); // wall wird erkannt
 				f = make_float4(0.0f, 0.1f, 0.0f, 0.0f); 
 				/*float4 color1 = make_float4(0, 0, 0, 0);
 				float4 color2 = make_float4(0.0f, 1.0f, 1.0f, 0);
