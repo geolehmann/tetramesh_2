@@ -28,7 +28,7 @@
 
 #define spp 1
 #define gamma 2.2f
-#define MAX_DEPTH 1
+#define MAX_DEPTH 2
 #define width 800	
 #define height 600
 
@@ -303,12 +303,12 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 			n = normalize(n);
 			nl = Dot(n, rayInWorldSpace) < 0 ? n : n * -1;
 
-			if (firsthit.constrained == true) { emit = make_float4(0.0f, 0.0f, 0.0f, 0.0f); f = make_float4(0.75f, 0.0f, 0.75f, 0.0f); } // yellow is constrained
+			if (firsthit.constrained == true) { emit = make_float4(0.0f, 0.0f, 0.0f, 0.0f); f = make_float4(0.0f, 0.0f, 0.75f, 0.0f); } // blue is constrained
 
 			if (firsthit.wall == true) 
 			{ 
-				emit = make_float4(7.0f, 5.0f, 3.0f, 0.0f); // wall wird erkannt
-				f = make_float4(0.0f, 0.1f, 0.0f, 0.0f); 
+				emit = make_float4(1.0f, 0.0f, 0.0f, 0.0f); // wall wird erkannt
+				f = make_float4(0.3f, 0.1f, 0.4f, 0.0f); 
 				/*float4 color1 = make_float4(0, 0, 0, 0);
 				float4 color2 = make_float4(0.0f, 1.0f, 1.0f, 0);
 				float percent = (((rayInWorldSpace.y + 1) * (1 - 0)) / (1 + 1)) + 0;
@@ -321,7 +321,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 			// dark ist weiß
 			if (firsthit.dark == true) { emit = make_float4(12.0f, 12.0f, 7.0f, 0.0f); f = make_float4(0.0f, 1.0f, 0.0f, 0.0f); /*printf("Éncountered dark state\n");*/ }
 
-		//	if (firsthit.face == 141 || firsthit.face == 816) { emit = make_float4(12, 12, 12, 0); f = make_float4(0.0f, 0.0f, 0.0f, 0.0f); }
+			//if (firsthit.face == 3 || firsthit.face == 6) { emit = make_float4(12, 12, 12, 0); f = make_float4(0.0f, 0.0f, 0.0f, 0.0f); }
 
 			if (firsthit.constrained == true) { firsthit.refl_t = DIFF; }
 			if (firsthit.wall == true) { firsthit.refl_t = DIFF; }

@@ -85,6 +85,12 @@ __device__ int signf(float f)
 	return 0;
 }
 
+__device__ bool sameSign(float a, float b)
+{
+	if (signf(a) == signf(b)) return true;
+	return false;
+}
+
 __device__ bool SameSide(const float4 &v1, const float4 &v2, const float4 &v3, const float4 &v4, const float4 &p)
 {
 	float4 normal = Cross(v2 - v1, v3 - v1);
@@ -287,6 +293,12 @@ struct BBox
 {
 	float4 min, max;
 };
+
+void scale_BBox(BBox &box, const float& factor)
+{
+box.min = box.min / factor;
+box.max = box.max * factor;
+}
 
 struct mesh2
 {

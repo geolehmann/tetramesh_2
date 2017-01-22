@@ -112,8 +112,9 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	
 	BBox mbox;
 	mbox = init_BBox(&oldnodes);
+	scale_BBox(mbox, 1.5); // scale boundingbox slightly bigger, so that wall triangles are well embedded into the tetrahedralization
 	std::vector <float4> rndnodes;
-	for (int i = 0; i < oldnodes.size(); i++)
+	for (int i = 0; i < (int)(oldnodes.size()*2/3); i++)
 	{
 		float r1 = distr(engine);
 		float r2 = distr(engine);
@@ -132,6 +133,34 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	rndnodes.push_back(make_float4(mbox.min.x, mbox.max.y, mbox.min.z, 0));
 	rndnodes.push_back(make_float4(mbox.max.x, mbox.min.y, mbox.max.z, 0));
 	rndnodes.push_back(make_float4(mbox.min.x, mbox.max.y, mbox.max.z, 0)); // 8 vertices of bounding box
+
+	// create 6*2 triangle faces forming a bounding box cube
+	in.numberoffacets = 12;
+	in.facetlist = new tetgenio::facet[in.numberoffacets];
+	tetgenio::facet *f;
+	tetgenio::polygon *p;
+
+	std::vector <int3> addfaces; // additional faces
+	addfaces.push_back(make_int3(1, 1, 1));
+
+	for (int i = 0; i < in.numberoffacets; i++)
+	{
+
+		f = &in.facetlist[i];
+		f->numberofpolygons = 1;
+		f->polygonlist = new tetgenio::polygon[f->numberofpolygons];
+		f->numberofholes = 0;
+		f->holelist = NULL;
+		p = &f->polygonlist[0];
+		p->numberofvertices = 3;
+		p->vertexlist = new int[p->numberofvertices];
+		p->vertexlist[0] = addfaces.at(0).x;
+		p->vertexlist[1] = addfaces.at(0).y;
+		p->vertexlist[2] = addfaces.at(0).z;
+	}
+
+
+
 
 	in.pointlist = new REAL[rndnodes.size() * 3];
 	for (int32_t i = 0; i < rndnodes.size(); i++)
@@ -199,6 +228,10 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	{
 		tetrahedras.at(j).counter = 0;
 	}
+	for (int j = 0; j < oldfaces.size(); j++)
+	{
+		oldfaces.at(j).face_is_constrained = false;
+	}
 
 	// assign faces to tets
 	fprintf_s(stderr, "Started assigning tets to faces...\n");
@@ -243,6 +276,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 
 			if (tr_tri_intersect3D(av0,ae1,ae2,atv1,aev1,aev2) != 0 || tr_tri_intersect3D(av0,ae1,ae2,atv1,aev3,aev4) != 0 || tr_tri_intersect3D(av0,ae1,ae2,atv1,aev1,aev4) != 0 || tr_tri_intersect3D(av0,ae1,ae2,atv2,aev5,aev6) != 0)
 			{
+				oldfaces.at(i).face_is_constrained = true;
 				tetrahedras.at(j).hasfaces = true;
 				// check if face is already in array
 				bool alreadythere = false;
@@ -277,6 +311,14 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		currentindex += ctet.counter;
 	}
 	fprintf_s(stderr, "Finished mesh preparation! \n");
+
+	for (auto f : oldfaces)
+	{
+		if (!f.face_is_constrained) fprintf_s(stderr, "Error");
+
+	}
+
+
 }
 
 

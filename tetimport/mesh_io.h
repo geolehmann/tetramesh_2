@@ -515,7 +515,7 @@ __device__ float RayTriangleIntersection(const Ray &r,	const float4& v0, const f
 {
 	// from https://github.com/straaljager/GPU-path-tracing-tutorial-2/blob/master/tutorial2_cuda_pathtracer.cu
 
-	float4 edge1 = v2 - v1;
+	/*float4 edge1 = v2 - v1;
 	float4 edge2 = v2 - v0;
 
 	float4 tvec = r.o - v0;
@@ -536,7 +536,27 @@ __device__ float RayTriangleIntersection(const Ray &r,	const float4& v0, const f
 	if (v < 0.0f || (u + v) > 1.0f)
 		return -1.0f;
 
-	return Dot(edge2, qvec) * det;
+	return Dot(edge2, qvec) * det;*/
+float u, v, w;
+float4 pq = r.d;
+float4 pa = v0 - r.o;
+float4 pb = v1 - r.o;
+float4 pc = v2 - r.o;
+float4 m = Cross(pq, pc);
+u = Dot(pb, m); // ScalarTriple(pq, pc, pb);
+v = -Dot(pa, m); // ScalarTriple(pq, pa, pc);
+if (!sameSign(u, v)) return -1.0f;
+w = ScTP(pq, pb, pa);
+if (!sameSign(u, w)) return -1.0f;
+
+/*float denom = 1.0f / (u + v + w);
+u *= denom;
+v *= denom;
+w *= denom; // w = 1.0f - u - v;*/
+
+float4 normal = Cross(v1-v0, v2-v0);
+float d_ = -1.0f / Dot(pq, normal);
+return Dot(-1*pa, normal) * d_;
 }
 
 __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t start, rayhit &d, double &dist, bool edgeVisualisation, bool &isEdge, float4 &normal)
