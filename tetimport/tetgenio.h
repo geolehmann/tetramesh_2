@@ -134,14 +134,35 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	rndnodes.push_back(make_float4(mbox.max.x, mbox.min.y, mbox.max.z, 0));
 	rndnodes.push_back(make_float4(mbox.min.x, mbox.max.y, mbox.max.z, 0)); // 8 vertices of bounding box
 
+	in.pointlist = new REAL[rndnodes.size() * 3];
+	for (int32_t i = 0; i < rndnodes.size(); i++)
+	{
+		in.pointlist[i * 3 + 0] = rndnodes.at(i).x;
+		in.pointlist[i * 3 + 1] = rndnodes.at(i).y;
+		in.pointlist[i * 3 + 2] = rndnodes.at(i).z;
+	}
+
+
 	// create 6*2 triangle faces forming a bounding box cube
+	// =====================================================
 	in.numberoffacets = 12;
 	in.facetlist = new tetgenio::facet[in.numberoffacets];
 	tetgenio::facet *f;
 	tetgenio::polygon *p;
 
+	std::vector <int3> addnodes; // additional nodes
 	std::vector <int3> addfaces; // additional faces
-	addfaces.push_back(make_int3(1, 1, 1));
+
+	addnodes.push_back(make_int3(rndnodes.size() * 3 + 0, rndnodes.size() * 3 + 1, rndnodes.size() * 3 + 2));
+	addnodes.push_back(make_int3((rndnodes.size()-1) * 3 + 0, (rndnodes.size()-1) * 3 + 1, (rndnodes.size()-1) * 3 + 2));
+	addnodes.push_back(make_int3((rndnodes.size()-2) * 3 + 0, (rndnodes.size()-2) * 3 + 1, (rndnodes.size()-2) * 3 + 2));
+	addnodes.push_back(make_int3((rndnodes.size()-3) * 3 + 0, (rndnodes.size()-3) * 3 + 1, (rndnodes.size()-3) * 3 + 2));
+	addnodes.push_back(make_int3((rndnodes.size()-4) * 3 + 0, (rndnodes.size()-4) * 3 + 1, (rndnodes.size()-4) * 3 + 2));
+	addnodes.push_back(make_int3((rndnodes.size()-5) * 3 + 0, (rndnodes.size()-5) * 3 + 1, (rndnodes.size()-5) * 3 + 2));
+	addnodes.push_back(make_int3((rndnodes.size()-6) * 3 + 0, (rndnodes.size()-6) * 3 + 1, (rndnodes.size()-6) * 3 + 2));
+	addnodes.push_back(make_int3((rndnodes.size()-7) * 3 + 0, (rndnodes.size()-7) * 3 + 1, (rndnodes.size()-7) * 3 + 2));
+
+
 
 	for (int i = 0; i < in.numberoffacets; i++)
 	{
@@ -158,18 +179,6 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		p->vertexlist[1] = addfaces.at(0).y;
 		p->vertexlist[2] = addfaces.at(0).z;
 	}
-
-
-
-
-	in.pointlist = new REAL[rndnodes.size() * 3];
-	for (int32_t i = 0; i < rndnodes.size(); i++)
-	{
-		in.pointlist[i * 3 + 0] = rndnodes.at(i).x;
-		in.pointlist[i * 3 + 1] = rndnodes.at(i).y;
-		in.pointlist[i * 3 + 2] = rndnodes.at(i).z;
-	}
-	
 
 	fprintf(stderr, "Starting tetrahedralization..\n");
 	tetrahedralize("nfznn", &in, &tmp); // 1st step - tetrahedralization of the vertices
