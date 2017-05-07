@@ -30,9 +30,6 @@
     <ClInclude Include="Util.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="mesh_io.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="Mesh.txt">
       <Filter>Ressourcendateien</Filter>
     </ClInclude>
@@ -40,6 +37,9 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="Intersections.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh_io.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

@@ -17,15 +17,16 @@
 #include <string>
 #include <cuda_runtime.h>
 #include <random>
+#include <algorithm>
+
+typedef int int32_t;
+typedef unsigned int uint32_t;
 
 #define _PI_ 3.1415926535897932384626422832795028841971f
 #define TWO_PI 6.2831853071795864769252867665590057683943f
 #define PI_OVER_TWO 1.5707963267948966192313216916397514420985f
 #define eps 1e-8
 #define inf 1e20
-
-typedef int int32_t;
-typedef unsigned int uint32_t;
 
 enum Refl_t { DIFF, SPEC, REFR, VOL, METAL}; 
 enum Geometry { TRIANGLE, SPHERE };
@@ -296,7 +297,7 @@ struct BBox
 
 void scale_BBox(BBox &box, const float& factor)
 {
-box.min = box.min / factor;
+box.min = box.min * factor;
 box.max = box.max * factor;
 }
 
@@ -314,21 +315,17 @@ struct mesh2
 	uint32_t *n_index;
 	float *n_x, *n_y, *n_z;
 
-	//faces
-	uint32_t *f_index;
-	uint32_t *f_node_a, *f_node_b, *f_node_c;
-
 	// tetrahedra
 	uint32_t *t_index;
 	int32_t *t_findex1, *t_findex2, *t_findex3, *t_findex4;
 	int32_t *t_nindex1, *t_nindex2, *t_nindex3, *t_nindex4;
 	int32_t *t_adjtet1, *t_adjtet2, *t_adjtet3, *t_adjtet4;
-	bool* hasfaces;
-	uint32_t* adjfaces_num;
-	uint32_t* adjfaces_numlist;
 
 	//mesh 
 	uint32_t tetnum, nodenum, facenum, oldnodenum, oldfacenum;
+
+	// array for assigning faces to tets
+	int32_t *assgndata;
 };
 
 struct rayhit

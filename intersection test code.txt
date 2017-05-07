@@ -12,3 +12,37 @@
 
 	if (RayTetIntersectionCPU(p1,p2,v1,v2,v3,v4)) hit = true;
 
+Tet/face:
+
+			int * coplanar = NULL; // dummy types
+			float source[3];
+			float target[3];
+
+			real p1[3] = { 0, 0, 0 };
+			real q1[3] = { 1, 0, 0 }; 
+			real r1[3] = { 0, 0, 1 }; // senkrechtes dreieck entlang  x -achse
+
+			real p2[3] = { 0.5, 0.5, 10.5 };  
+			real q2[3] = { 0.5, -2.0, 10.50 }; 
+			real r2[3] = { 2.0, -2.0, 10.5 }; 
+
+			int test = tri_tri_intersection_test_3d(p1, q1, r1, p2, q2, r2, coplanar, source, target);
+
+
+			  // Compute distance signs  of p1, q1 and r1 
+   			 // to the plane of triangle(p2,q2,r2)
+
+
+
+
+
+	bool test1 = false;
+	test1 = IsPointInThisTetCPU(mesh, make_float4(0.0f, -0.0f, 0.0f, 0), 1);
+
+	float4 p = make_float4(0.2, 0.2, 0.2, 0);
+	float4 v1 = make_float4(0, 0, 0, 0);
+	float4 v2 = make_float4(1, 0, 0, 0);
+	float4 v3 = make_float4(0, 1, 0, 0);
+	float4 v4 = make_float4(0, 0, 1, 0);
+	bool test2 = false;
+	test2 = IsPointInTetrahedronCPU(v1, v2, v3, v4, p);

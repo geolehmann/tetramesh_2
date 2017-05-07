@@ -1,0 +1,170 @@
+float RayTriangleIntersectionCPU(Ray r,	float4 v0, float4 v1, float4 v2)
+{
+	float4 edge1 = v1 - v0;
+	float4 edge2 = v2 - v0;
+	float4 tvec = r.o - v0;
+	float4 pvec = CrossCPU(r.d, edge2);
+	float  det = DotCPU(edge1, pvec);
+
+	det = 1.0f / det;  // CUDA intrinsic function 
+
+	float u = DotCPU(tvec, pvec) * det;
+
+	if (u < 0.0f || u > 1.0f)
+		return -1.0f;
+
+	float4 qvec = CrossCPU(tvec, edge1);
+
+	float v = DotCPU(r.d, qvec) * det;
+
+	if (v < 0.0f || (u + v) > 1.0f)
+		return -1.0f;
+
+return DotCPU(edge2, qvec) * det;
+/*float4 edge1 = v1 - v0;
+float4 edge2 = v2 - v0;
+float4 pvec = CrossCPU(r.d, edge2);
+const float det = DotCPU(edge1, pvec);
+float4 result;
+
+if (det > -eps && det < eps) return -1.0f;
+
+    const float invDet = 1.0f / det;
+
+    const float4 tvec = r.o - v0;
+
+    result.x = DotCPU(tvec, pvec) * invDet;
+    if (result.x < 0.0f || result.x > 1.0f)
+      return -1.0f;
+
+    const float4 qvec = CrossCPU(tvec, edge1);
+
+    result.y = DotCPU(r.d, qvec) * invDet;
+    if (result.y < 0.0f || (result.x + result.y) > 1.0f)
+      return -1.0f; 
+
+    result.z = 1.0f - result.x - result.y; // barycentric w = 1 - u - v
+   float t = DotCPU(edge2, qvec) * invDet; // ray intersection
+
+    return t;*/
+
+/*float u, v, w;
+float4 pq = r.d;
+float4 pa = v0 - r.o;
+float4 pb = v1 - r.o;
+float4 pc = v2 - r.o;
+float4 m = CrossCPU(pq, pc);
+u = DotCPU(pb, m); 
+v = -DotCPU(pa, m); 
+if (!sameSignCPU(u, v)) return -1.0f;
+w = ScTPCPU(pq, pb, pa);
+if (!sameSignCPU(u, w)) return -1.0f;
+		float4 e1 = v1 - v0;
+		float4 e2 = v2 - v0;
+		float4 s = r.o - v0;
+		float4 normal = CrossCPU(e1, e2);
+		float d_ = -1.0f / DotCPU(r.d, normal);
+		float dist = DotCPU(s, normal) * d_;
+		return dist;*/
+
+}
+
+	float distTri(float4 v0, float4 v1, float4 v2, float4 o, float4 d)
+	{
+		float4 edge1 = v1 - v0;
+		float4 edge2 = v2 - v0;
+		float4 tvec = o - v0;
+		float4 pvec = CrossCPU(d, edge2);
+		float  det = DotCPU(edge1, pvec);
+		det = 1.0f / det;  // CUDA intrinsic function 
+		float u = DotCPU(tvec, pvec) * det;
+		if (u < 0.0f || u > 1.0f) return -1.0f;
+		float4 qvec = CrossCPU(tvec, edge1);
+		float v = DotCPU(d, qvec) * det;
+		if (v < 0.0f || (u + v) > 1.0f)	return -1.0f;
+		return  DotCPU(edge2, qvec) * det;
+	}
+
+
+
+
+	// from https://github.com/straaljager/GPU-path-tracing-tutorial-2/blob/master/tutorial2_cuda_pathtracer.cu
+
+	/*float4 edge1 = v2 - v1;
+	float4 edge2 = v2 - v0;
+
+	float4 tvec = r.o - v0;
+	float4 pvec = Cross(r.d, edge2);
+	float  det = Dot(edge1, pvec);
+
+	det = __fdividef(1.0f, det);   
+
+	float u = Dot(tvec, pvec) * det;
+
+	if (u < 0.0f || u > 1.0f)
+		return -1.0f;
+
+	float4 qvec = Cross(tvec, edge1);
+
+	float v = Dot(r.d, qvec) * det;
+
+	if (v < 0.0f || (u + v) > 1.0f)
+		return -1.0f;
+
+	return Dot(edge2, qvec) * det;*/
+/*float u, v, w;
+float4 pq = r.d;
+float4 pa = v0 - r.o;
+float4 pb = v1 - r.o;
+float4 pc = v2 - r.o;
+float4 m = Cross(pq, pc);
+u = Dot(pb, m); // ScalarTriple(pq, pc, pb);
+v = -Dot(pa, m); // ScalarTriple(pq, pa, pc);
+if (!sameSign(u, v)) return -1.0f;
+w = ScTP(pq, pb, pa);
+if (!sameSign(u, w)) return -1.0f;*/
+
+/*float denom = 1.0f / (u + v + w);
+u *= denom;
+v *= denom;
+w *= denom; // w = 1.0f - u - v;*/
+
+/*float4 normal = Cross(v1-v0, v2-v0);
+float d_ = -1.0f / Dot(pq, normal);
+return Dot(-1*pa, normal) * d_;*/
+
+
+
+
+
+__device__ float RayTriangleIntersectionMesh(mesh2 *mesh, const Ray &r,	int32_t faceid)
+{
+	// from https://github.com/straaljager/GPU-path-tracing-tutorial-2/blob/master/tutorial2_cuda_pathtracer.cu
+
+	float4 v0 = make_float4(mesh->n_x[mesh->f_node_a[faceid]], mesh->n_y[mesh->f_node_a[faceid]], mesh->n_z[mesh->f_node_a[faceid]], 0);
+	float4 v1 = make_float4(mesh->n_x[mesh->f_node_b[faceid]], mesh->n_y[mesh->f_node_b[faceid]], mesh->n_z[mesh->f_node_b[faceid]], 0);
+	float4 v2 = make_float4(mesh->n_x[mesh->f_node_c[faceid]], mesh->n_y[mesh->f_node_c[faceid]], mesh->n_z[mesh->f_node_c[faceid]], 0);
+
+	float4 edge1 = v2 - v1;
+	float4 edge2 = v2 - v0;
+
+	float4 tvec = r.o - v0;
+	float4 pvec = Cross(r.d, edge2);
+	float  det = Dot(edge1, pvec);
+
+	det = __fdividef(1.0f, det);   
+
+	float u = Dot(tvec, pvec) * det;
+
+	if (u < 0.0f || u > 1.0f)
+		return -1.0f;
+
+	float4 qvec = Cross(tvec, edge1);
+
+	float v = Dot(r.d, qvec) * det;
+
+	if (v < 0.0f || (u + v) > 1.0f)
+		return -1.0f;
+
+	return Dot(edge2, qvec) * det;
+}

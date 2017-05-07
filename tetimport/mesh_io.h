@@ -25,7 +25,7 @@
 
 #include "Math.h"
 
-__managed__ int32_t _start_tet = 0; // index of tetrahedra containng starting point
+__managed__ int32_t _start_tet = -1; // index of tetrahedra containng starting point
 
 struct node
 {
@@ -327,14 +327,15 @@ bool IsPointInThisTetCPU(mesh2* mesh, float4 v, int32_t tet)
 
 __global__ void GetTetrahedraFromPoint(mesh2* mesh, float4 p)
 {
-		int i = (blockIdx.x + blockIdx.y * gridDim.x) * (blockDim.x * blockDim.y) + (threadIdx.y * blockDim.x) + threadIdx.x;
-		if (i < mesh->tetnum) {
+	bool found = false;
+	int i = blockIdx.x;
+		if (i < mesh->tetnum && !found) {
 			/*float4 v1 = make_float4(mesh->n_x[mesh->t_nindex1[i]], mesh->n_y[mesh->t_nindex1[i]], mesh->n_z[mesh->t_nindex1[i]], 0);
 			float4 v2 = make_float4(mesh->n_x[mesh->t_nindex2[i]], mesh->n_y[mesh->t_nindex2[i]], mesh->n_z[mesh->t_nindex2[i]], 0);
 			float4 v3 = make_float4(mesh->n_x[mesh->t_nindex3[i]], mesh->n_y[mesh->t_nindex3[i]], mesh->n_z[mesh->t_nindex3[i]], 0);
 			float4 v4 = make_float4(mesh->n_x[mesh->t_nindex4[i]], mesh->n_y[mesh->t_nindex4[i]], mesh->n_z[mesh->t_nindex4[i]], 0);
 			if (IsPointInTetrahedron(v1, v2, v3, v4, p) == true) _start_tet = i;*/
-			if (IsPointInThisTet(mesh, p, i) == true) _start_tet = i; 
+			if (IsPointInThisTet(mesh, p, i)) { _start_tet = i; found = true; }
 		}
 
 }
@@ -357,10 +358,10 @@ BBox init_BBox(std::deque<node>* nodes)
 	BBox boundingbox;
 	boundingbox.min = make_float4(0, 0, 0, 0);
 	boundingbox.max = make_float4(0, 0, 0, 0);
-	for (uint32_t i = 0; i < nodes->size(); i++)
+	for (auto n : *nodes) // auf auto ändern
 	{
-		boundingbox.min = minCPU(boundingbox.min, make_float4(nodes->at(i).x,nodes->at(i).y,nodes->at(i).z,0));
-		boundingbox.max = maxCPU(boundingbox.max, make_float4(nodes->at(i).x,nodes->at(i).y,nodes->at(i).z,0));
+		boundingbox.min = minCPU(boundingbox.min, make_float4(n.x,n.y,n.z,0));
+		boundingbox.max = maxCPU(boundingbox.max, make_float4(n.x,n.y,n.z,0));
 	}
 	return boundingbox;
 }
@@ -378,8 +379,8 @@ void ClampToBBox(BBox* boundingbox, float4 &p)
 __device__ void GetExitTet(float4 ray_o, float4 ray_d, float4* nodes, int32_t findex[4], int32_t adjtet[4], int32_t lface, int32_t &face, int32_t &tet, float4 &uvw)
 {
 	bool found = false;
-	face = 0;
-	tet = 0;
+	face = -1;
+	tet = -1;
 
 	// http://realtimecollisiondetection.net/blog/?p=13
 	// and https://github.com/JKolios/RayTetra/blob/master/RayTetra/RayTetraSTP0.cl
@@ -453,7 +454,7 @@ __device__ void GetExitTet(float4 ray_o, float4 ray_d, float4* nodes, int32_t fi
 		}
 	}
 	// No face hit
-	// if (face == 0 && tet == 0) { printf("Error! No exit tet found. \n"); }
+	// if (face == -1 && tet == -1) { printf("Error! No exit tet found. \n"); }
 }
 
 
@@ -479,85 +480,22 @@ __device__ void GetExitTet2(float4 ray_o, float4 ray_d, float4* nodes, int32_t f
 }
 
 
-__device__ float RayTriangleIntersectionMesh(mesh2 *mesh, const Ray &r,	int32_t faceid)
-{
-	// from https://github.com/straaljager/GPU-path-tracing-tutorial-2/blob/master/tutorial2_cuda_pathtracer.cu
-
-	float4 v0 = make_float4(mesh->n_x[mesh->f_node_a[faceid]], mesh->n_y[mesh->f_node_a[faceid]], mesh->n_z[mesh->f_node_a[faceid]], 0);
-	float4 v1 = make_float4(mesh->n_x[mesh->f_node_b[faceid]], mesh->n_y[mesh->f_node_b[faceid]], mesh->n_z[mesh->f_node_b[faceid]], 0);
-	float4 v2 = make_float4(mesh->n_x[mesh->f_node_c[faceid]], mesh->n_y[mesh->f_node_c[faceid]], mesh->n_z[mesh->f_node_c[faceid]], 0);
-
-	float4 edge1 = v2 - v1;
-	float4 edge2 = v2 - v0;
-
-	float4 tvec = r.o - v0;
-	float4 pvec = Cross(r.d, edge2);
-	float  det = Dot(edge1, pvec);
-
-	det = __fdividef(1.0f, det);   
-
-	float u = Dot(tvec, pvec) * det;
-
-	if (u < 0.0f || u > 1.0f)
-		return -1.0f;
-
-	float4 qvec = Cross(tvec, edge1);
-
-	float v = Dot(r.d, qvec) * det;
-
-	if (v < 0.0f || (u + v) > 1.0f)
-		return -1.0f;
-
-	return Dot(edge2, qvec) * det;
-}
-
 __device__ float RayTriangleIntersection(const Ray &r,	const float4& v0, const float4& v1, const float4& v2)
 {
-	// from https://github.com/straaljager/GPU-path-tracing-tutorial-2/blob/master/tutorial2_cuda_pathtracer.cu
-
-	/*float4 edge1 = v2 - v1;
-	float4 edge2 = v2 - v0;
-
-	float4 tvec = r.o - v0;
-	float4 pvec = Cross(r.d, edge2);
-	float  det = Dot(edge1, pvec);
-
-	det = __fdividef(1.0f, det);   
-
-	float u = Dot(tvec, pvec) * det;
-
-	if (u < 0.0f || u > 1.0f)
-		return -1.0f;
-
-	float4 qvec = Cross(tvec, edge1);
-
-	float v = Dot(r.d, qvec) * det;
-
-	if (v < 0.0f || (u + v) > 1.0f)
-		return -1.0f;
-
-	return Dot(edge2, qvec) * det;*/
-float u, v, w;
-float4 pq = r.d;
-float4 pa = v0 - r.o;
-float4 pb = v1 - r.o;
-float4 pc = v2 - r.o;
-float4 m = Cross(pq, pc);
-u = Dot(pb, m); // ScalarTriple(pq, pc, pb);
-v = -Dot(pa, m); // ScalarTriple(pq, pa, pc);
-if (!sameSign(u, v)) return -1.0f;
-w = ScTP(pq, pb, pa);
-if (!sameSign(u, w)) return -1.0f;
-
-/*float denom = 1.0f / (u + v + w);
-u *= denom;
-v *= denom;
-w *= denom; // w = 1.0f - u - v;*/
-
-float4 normal = Cross(v1-v0, v2-v0);
-float d_ = -1.0f / Dot(pq, normal);
-return Dot(-1*pa, normal) * d_;
+		float4 edge1 = v1 - v0; // der test sollte jetzt okay sein
+		float4 edge2 = v2 - v0;
+		float4 tvec = r.o - v0;
+		float4 pvec = Cross(r.d, edge2);
+		float  det = Dot(edge1, pvec);
+		det = 1.0f / det;  // CUDA intrinsic function 
+		float u = Dot(tvec, pvec) * det;
+		if (u < 0.0f || u > 1.0f) return -1.0f; // two-sided?
+		float4 qvec = Cross(tvec, edge1);
+		float v = Dot(r.d, qvec) * det;
+		if (v < 0.0f || (u + v) > 1.0f)	return -1.0f;
+		return Dot(edge2, qvec) * det;
 }
+
 
 __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t start, rayhit &d, double &dist, bool edgeVisualisation, bool &isEdge, float4 &normal)
 {
@@ -580,32 +518,39 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 
 			GetExitTet(rayo, rayd, nodes, findex, adjtets, lastface, nextface, nexttet, uvw);
 			 
-			float dist = 9999999.9f; // distance of intersection
+			float dist = FLT_MAX; // distance of intersection
 			int32_t fi = 0; // index of intersected face
-
-			int faces_per_tet = mesh->adjfaces_num[current_tet+1] - mesh->adjfaces_num[current_tet];
-
+			//bool reached_end = false;
+	
 			// loop over all embedded faces and check for intersection and get closest one			
-			for (int i = 0; i < faces_per_tet; i++) // important observation -> even when looping over all faces, still same problems
+			for (int index = 0; index < 99; index++) // important observation -> even when looping over all faces, still same problems
+			{
+
+				int32_t ind = current_tet * 99 + index;
+
+				//if (mesh->assgndata[ind] == -1) reached_end = true;
+				if (mesh->assgndata[ind] >= 0 /*&& !reached_end*/) // careful - we assume that facenumber is not greater than 99.999 
 				{
-					int32_t na = mesh->fg_node_a[mesh->adjfaces_numlist[mesh->adjfaces_num[current_tet]+i]];
-					int32_t nb = mesh->fg_node_b[mesh->adjfaces_numlist[mesh->adjfaces_num[current_tet]+i]];
-					int32_t nc = mesh->fg_node_c[mesh->adjfaces_numlist[mesh->adjfaces_num[current_tet]+i]];
+					int32_t na = mesh->fg_node_a[mesh->assgndata[ind]];
+					int32_t nb = mesh->fg_node_b[mesh->assgndata[ind]];
+					int32_t nc = mesh->fg_node_c[mesh->assgndata[ind]];
 
 					float4 v1 = make_float4(mesh->ng_x[na], mesh->ng_y[na], mesh->ng_z[na], 0);
 					float4 v2 = make_float4(mesh->ng_x[nb], mesh->ng_y[nb], mesh->ng_z[nb], 0);
 					float4 v3 = make_float4(mesh->ng_x[nc], mesh->ng_y[nc], mesh->ng_z[nc], 0); // check this - is this correct ??????
 					// CAREFUL: we need the oldfaces now!!!!!!
 					float d_new = RayTriangleIntersection(Ray(rayo, rayd), v1, v2, v3);
-					if (d_new < dist && d_new > 0.0001) { dist = d_new; fi = i; hitfound = true; } // do we get the closest triangle? - no!!!
+					if (d_new < dist && d_new > 0.0001) { dist = d_new; fi = ind; hitfound = true; } // do we get the closest triangle? - no!!!
 				}
-				if (hitfound)
-				{
-					d.face = mesh->adjfaces_numlist[mesh->adjfaces_num[current_tet]+ fi];
-					d.constrained = true;
-					d.tet = current_tet;
-				}
-			//}
+			}
+
+			if (hitfound)
+			{	
+				d.face = mesh->assgndata[fi];
+				d.constrained = true;
+				d.tet = current_tet;
+			}
+				
 
 			if (nexttet == -1 || nextface == -1) { d.wall = true; d.constrained = false;  d.face = nextface; d.tet = current_tet; hitfound = true; } // when adjacent tetrahedra is -1, ray stops
 			lastface = nextface;
@@ -638,7 +583,7 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 		float4 e2 = n_c - n_a;
 		float4 s = rayo - n_a;
 		normal = Cross(e1, e2);
-		float d_ = -1.0f / Dot(rayd, normal);
+		float d_ = -1.0f / Dot(rayd, normal); // dist-berechnung evtl. obsolet
 		dist = Dot(s, normal) * d_;
 	}
 

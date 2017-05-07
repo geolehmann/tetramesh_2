@@ -44,13 +44,10 @@ public:
 	uint32_t tetnum, nodenum, facenum;
 	std::deque<tetrahedra>tetrahedras;
 	std::deque<node>nodes;
-	std::deque<face>faces;
-
-	std::deque<uint32_t> adjfaces_num;
-	std::deque<uint32_t> adjfaces_numlist;
 
 	void loadobj(std::string filename);
 };
+
 
 void tetrahedral_mesh::loadobj(std::string filename)
 {
@@ -94,9 +91,8 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	}
 
 	tetgenio in, tmp, out;
-	in.numberofpoints = vertexid + 8; // 8 vertices from BBox
-
-	oldnodenum = in.numberofpoints;
+	
+	oldnodenum = vertexid;
 	oldfacenum = oldfaces.size();
 
 	/*in.pointlist = new REAL[in.numberofpoints * 3];
@@ -114,17 +110,18 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	mbox = init_BBox(&oldnodes);
 	scale_BBox(mbox, 1.5); // scale boundingbox slightly bigger, so that wall triangles are well embedded into the tetrahedralization
 	std::vector <float4> rndnodes;
-	for (int i = 0; i < (int)(oldnodes.size()*2/3); i++)
+	/*for (int i = 0; i < (int)(oldnodes.size()); i++)
 	{
 		float r1 = distr(engine);
 		float r2 = distr(engine);
 		float r3 = distr(engine);
 		// NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
+		// scale 0..1 values to BBox
 		float n1 = ((r1 - 0) * (mbox.max.x - mbox.min.x) / (1 - 0)) + mbox.min.x;
 		float n2 = ((r2 - 0) * (mbox.max.y - mbox.min.y) / (1 - 0)) + mbox.min.y;
 		float n3 = ((r3 - 0) * (mbox.max.z - mbox.min.z) / (1 - 0)) + mbox.min.z;
 		rndnodes.push_back(make_float4(n1, n2, n3, 0));
-	} 
+	} */
 	rndnodes.push_back(make_float4(mbox.max.x, mbox.max.y, mbox.max.z, 0));
 	rndnodes.push_back(make_float4(mbox.min.x, mbox.min.y, mbox.min.z, 0));
 	rndnodes.push_back(make_float4(mbox.max.x, mbox.min.y, mbox.min.z, 0));
@@ -141,8 +138,8 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		in.pointlist[i * 3 + 1] = rndnodes.at(i).y;
 		in.pointlist[i * 3 + 2] = rndnodes.at(i).z;
 	}
-
-
+	              
+	in.numberofpoints = rndnodes.size();
 	// create 6*2 triangle faces forming a bounding box cube
 	// =====================================================
 	in.numberoffacets = 12;
@@ -150,18 +147,32 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	tetgenio::facet *f;
 	tetgenio::polygon *p;
 
-	std::vector <int3> addnodes; // additional nodes
 	std::vector <int3> addfaces; // additional faces
 
-	addnodes.push_back(make_int3(rndnodes.size() * 3 + 0, rndnodes.size() * 3 + 1, rndnodes.size() * 3 + 2));
-	addnodes.push_back(make_int3((rndnodes.size()-1) * 3 + 0, (rndnodes.size()-1) * 3 + 1, (rndnodes.size()-1) * 3 + 2));
-	addnodes.push_back(make_int3((rndnodes.size()-2) * 3 + 0, (rndnodes.size()-2) * 3 + 1, (rndnodes.size()-2) * 3 + 2));
-	addnodes.push_back(make_int3((rndnodes.size()-3) * 3 + 0, (rndnodes.size()-3) * 3 + 1, (rndnodes.size()-3) * 3 + 2));
-	addnodes.push_back(make_int3((rndnodes.size()-4) * 3 + 0, (rndnodes.size()-4) * 3 + 1, (rndnodes.size()-4) * 3 + 2));
-	addnodes.push_back(make_int3((rndnodes.size()-5) * 3 + 0, (rndnodes.size()-5) * 3 + 1, (rndnodes.size()-5) * 3 + 2));
-	addnodes.push_back(make_int3((rndnodes.size()-6) * 3 + 0, (rndnodes.size()-6) * 3 + 1, (rndnodes.size()-6) * 3 + 2));
-	addnodes.push_back(make_int3((rndnodes.size()-7) * 3 + 0, (rndnodes.size()-7) * 3 + 1, (rndnodes.size()-7) * 3 + 2));
+	int32_t n1, n2, n3, n4, n5, n6, n7, n8;
+	
+	
+	n1 = rndnodes.size() - 1;
+	n2 = rndnodes.size() - 2;
+	n3 = rndnodes.size() - 3;
+	n4 = rndnodes.size() - 4;
+	n5 = rndnodes.size() - 5;
+	n6 = rndnodes.size() - 6;
+	n7 = rndnodes.size() - 7;
+	n8 = rndnodes.size() - 8;
 
+	addfaces.push_back(make_int3(n1, n5, n6)); // 12 additional faces, each with three vertex ids
+	addfaces.push_back(make_int3(n1, n2, n6));
+	addfaces.push_back(make_int3(n3, n7, n8));
+	addfaces.push_back(make_int3(n3, n4, n8));
+	addfaces.push_back(make_int3(n5, n6, n7));
+	addfaces.push_back(make_int3(n6, n7, n8));
+	addfaces.push_back(make_int3(n1, n2, n3));
+	addfaces.push_back(make_int3(n2, n3, n4));
+	addfaces.push_back(make_int3(n1, n3, n5));
+	addfaces.push_back(make_int3(n3, n5, n7));
+	addfaces.push_back(make_int3(n2, n4, n6));
+	addfaces.push_back(make_int3(n4, n6, n8));
 
 
 	for (int i = 0; i < in.numberoffacets; i++)
@@ -174,10 +185,10 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		f->holelist = NULL;
 		p = &f->polygonlist[0];
 		p->numberofvertices = 3;
-		p->vertexlist = new int[p->numberofvertices];
-		p->vertexlist[0] = addfaces.at(0).x;
-		p->vertexlist[1] = addfaces.at(0).y;
-		p->vertexlist[2] = addfaces.at(0).z;
+		p->vertexlist = new int[p->numberofvertices]; // in vertexlist die nummer aus in.pointlist néhmen
+		p->vertexlist[0] = addfaces.at(i).x;
+		p->vertexlist[1] = addfaces.at(i).y;
+		p->vertexlist[2] = addfaces.at(i).z;
 	}
 
 	fprintf(stderr, "Starting tetrahedralization..\n");
@@ -244,7 +255,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 
 	// assign faces to tets
 	fprintf_s(stderr, "Started assigning tets to faces...\n");
-	for (int i = 0; i < oldfaces.size(); i++) // loop over all faces
+	for (int i = 0; i < oldfaces.size(); i++) // loop over all old faces
 	{
 		for (int j = 0; j < out.numberoftetrahedra; j++)  // for each face, loop over all tets
 		{
@@ -258,9 +269,10 @@ void tetrahedral_mesh::loadobj(std::string filename)
 
 			// tets
 			int32_t tn1 = tetrahedras.at(j).nindex1;
-			int32_t tn2 = tetrahedras.at(j).nindex2;
+			int32_t tn2 = tetrahedras.at(j).nindex2;		
 			int32_t tn3 = tetrahedras.at(j).nindex3;
 			int32_t tn4 = tetrahedras.at(j).nindex4;
+
 			float4 tv1 = make_float4(out.pointlist[3 * tn1 + 0], out.pointlist[3 * tn1 + 1], out.pointlist[3 * tn1 + 2], 0); 
 			float4 tv2 = make_float4(out.pointlist[3 * tn2 + 0], out.pointlist[3 * tn2 + 1], out.pointlist[3 * tn2 + 2], 0);
 			float4 tv3 = make_float4(out.pointlist[3 * tn3 + 0], out.pointlist[3 * tn3 + 1], out.pointlist[3 * tn3 + 2], 0);
@@ -268,36 +280,33 @@ void tetrahedral_mesh::loadobj(std::string filename)
 
 			
 			// tr_tri_intersect3D (double *C1, double *P1, double *P2, double *D1, double *Q1, double *Q2)
-			double av0[3] = { v0.x, v0.y, v0.z };
-			double ae1[3] = { v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
-			double ae2[3] = { v2.x - v0.x, v2.y - v0.y, v2.z - v0.z };
-			double atv1[3] = { tv1.x, tv1.y, tv1.z };
-			double atv2[3] = { tv2.x, tv2.y, tv2.z }; // 1,2,3		1,3,4		1,2,4		2,3,4
 
-			double aev1[3] = { tv2.x - tv1.x, tv2.y - tv1.y, tv2.z - tv1.z };
-			double aev2[3] = { tv3.x - tv1.x, tv3.y - tv1.y, tv3.z - tv1.z };
+			int * coplanar = NULL; // dummy types
+			float source[3];
+			float target[3];
 
-			double aev3[3] = { tv3.x - tv1.x, tv3.y - tv1.y, tv3.z - tv1.z };
-			double aev4[3] = { tv4.x - tv1.x, tv4.y - tv1.y, tv4.z - tv1.z };
 
-			double aev5[3] = { tv3.x - tv2.x, tv3.y - tv2.y, tv3.z - tv2.z };
-			double aev6[3] = { tv4.x - tv2.x, tv4.y - tv2.y, tv4.z - tv2.z };
+			float av0[3] = { v0.x, v0.y, v0.z };
+			float ae1[3] = { v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
+			float ae2[3] = { v2.x - v0.x, v2.y - v0.y, v2.z - v0.z };
+			float atv1[3] = { tv1.x, tv1.y, tv1.z };
+			float atv2[3] = { tv2.x, tv2.y, tv2.z }; // 1,2,3		1,3,4		1,2,4		2,3,4
 
-			if (tr_tri_intersect3D(av0,ae1,ae2,atv1,aev1,aev2) != 0 || tr_tri_intersect3D(av0,ae1,ae2,atv1,aev3,aev4) != 0 || tr_tri_intersect3D(av0,ae1,ae2,atv1,aev1,aev4) != 0 || tr_tri_intersect3D(av0,ae1,ae2,atv2,aev5,aev6) != 0)
+			float aev1[3] = { tv2.x - tv1.x, tv2.y - tv1.y, tv2.z - tv1.z };
+			float aev2[3] = { tv3.x - tv1.x, tv3.y - tv1.y, tv3.z - tv1.z };
+
+			float aev3[3] = { tv3.x - tv1.x, tv3.y - tv1.y, tv3.z - tv1.z };
+			float aev4[3] = { tv4.x - tv1.x, tv4.y - tv1.y, tv4.z - tv1.z };
+
+			float aev5[3] = { tv3.x - tv2.x, tv3.y - tv2.y, tv3.z - tv2.z };
+			float aev6[3] = { tv4.x - tv2.x, tv4.y - tv2.y, tv4.z - tv2.z };
+
+			if (tri_tri_intersection_test_3d(av0,ae1,ae2,atv1,aev1,aev2,coplanar,source,target) != 0 || tri_tri_intersection_test_3d(av0,ae1,ae2,atv1,aev3,aev4,coplanar,source,target) != 0 || tri_tri_intersection_test_3d(av0,ae1,ae2,atv1,aev1,aev4,coplanar,source,target) != 0 || tri_tri_intersection_test_3d(av0,ae1,ae2,atv2,aev5,aev6,coplanar,source,target) != 0)
 			{
 				oldfaces.at(i).face_is_constrained = true;
 				tetrahedras.at(j).hasfaces = true;
-				// check if face is already in array
-				bool alreadythere = false;
-				for (int k = 0; k < 99; k++)
-				{
-					if (tetrahedras.at(j).faces[k] == i) alreadythere = true;
-				}
-				if (!alreadythere) 
-				{
-					tetrahedras.at(j).faces[tetrahedras.at(j).counter] = i; // tetrahedron at position 'j' gets face at 'i' assigned 
-					tetrahedras.at(j).counter = tetrahedras.at(j).counter + 1; // increase counter 
-				}
+				tetrahedras.at(j).faces[tetrahedras.at(j).counter] = i; // tetrahedron at position 'j' gets face at 'i' assigned 
+				tetrahedras.at(j).counter = tetrahedras.at(j).counter + 1; // increase counter 
 			}
 
 		}
@@ -305,28 +314,19 @@ void tetrahedral_mesh::loadobj(std::string filename)
 		if (i == (int)oldfaces.size()/2) fprintf_s(stderr, "50%% done\n");
 		if (i == (int)oldfaces.size()*3/4) fprintf_s(stderr, "75%% done\n");
 	}
-	fprintf_s(stderr, "Finished assigning faces to tets!\n");
 
-	//=====================================================================================================================
-
-	uint32_t currentindex = 0;
-	for (auto ctet : tetrahedras) // loop over all tetrahedra
-	{
-		for (int i = 0; i < ctet.counter;i++)
-		{
-			if (ctet.faces[i] !=0) adjfaces_numlist.push_back(ctet.faces[i]);
-		}
-		adjfaces_num.push_back(currentindex + ctet.counter); // in adjfaces_num sind pro tet die anzahl der faces
-		currentindex += ctet.counter;
-	}
-	fprintf_s(stderr, "Finished mesh preparation! \n");
 
 	for (auto f : oldfaces)
 	{
-		if (!f.face_is_constrained) fprintf_s(stderr, "Error");
+		if (!f.face_is_constrained)
+		{
+			fprintf_s(stderr, "Error while assigning faces!\n");
+			system("PAUSE");
+			exit(0);
+		}
 
 	}
-
+	fprintf_s(stderr, "Finished assigning faces to tets!\n");
 
 }
 

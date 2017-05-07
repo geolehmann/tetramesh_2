@@ -15,7 +15,6 @@
 
 #define GLEW_STATIC
 #include "Util.h"
-#include "mesh_io.h"
 #include "tetgenio.h"
 #include "Camera.h"
 #include "device_launch_parameters.h"
@@ -29,8 +28,8 @@
 #define spp 1
 #define gamma 2.2f
 #define MAX_DEPTH 2
-#define width 800	
-#define height 600
+#define width 640	
+#define height 480
 
 float3* finalimage;
 float3* accumulatebuffer;
@@ -270,13 +269,35 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 		float3 rayorig = make_float3(originInWorldSpace.x, originInWorldSpace.y, originInWorldSpace.z);
 		float3 raydir = make_float3(rayInWorldSpace.x, rayInWorldSpace.y, rayInWorldSpace.z);
 		bool isEdge = false;
-		double dist;
+		double dist=DBL_MAX;
 		rayhit firsthit;
 		Geometry geom;
 
 
 		// ------------------------------ TRIANGLE intersection --------------------------------------------
-		traverse_ray(mesh, originInWorldSpace, rayInWorldSpace, newstart, firsthit, dist, edgeVisualization, isEdge, n);
+		//traverse_ray(mesh, originInWorldSpace, rayInWorldSpace, newstart, firsthit, dist, edgeVisualization, isEdge, n);
+
+		// test - loop over all triangles, test for intersection
+		for (int i = 0; i < mesh->oldfacenum; i++)
+		{
+					int32_t na = mesh->fg_node_a[i];
+					int32_t nb = mesh->fg_node_b[i];
+					int32_t nc = mesh->fg_node_c[i];
+					float4 v1 = make_float4(mesh->ng_x[na], mesh->ng_y[na], mesh->ng_z[na], 0);
+					float4 v2 = make_float4(mesh->ng_x[nb], mesh->ng_y[nb], mesh->ng_z[nb], 0);
+					float4 v3 = make_float4(mesh->ng_x[nc], mesh->ng_y[nc], mesh->ng_z[nc], 0);
+					float d_new =  RayTriangleIntersection(Ray(originInWorldSpace, rayInWorldSpace), v1, v2, v3);
+					if (d_new < dist && d_new > 0.0001) 
+					{ 
+						dist = d_new; firsthit.constrained = true; 		
+						float4 e1 = v2 - v1;
+						float4 e2 = v3 - v1;
+						float4 s = originInWorldSpace - v1;
+						n = Cross(e1, e2);
+					}
+		}
+
+
 		pointHitInWorldSpace = originInWorldSpace + rayInWorldSpace * dist;
 
 		// ------------------------------ SPHERE intersection --------------------------------------------
@@ -303,7 +324,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 			n = normalize(n);
 			nl = Dot(n, rayInWorldSpace) < 0 ? n : n * -1;
 
-			if (firsthit.constrained == true) { emit = make_float4(0.0f, 0.0f, 0.0f, 0.0f); f = make_float4(0.0f, 0.0f, 0.75f, 0.0f); } // blue is constrained
+			if (firsthit.constrained == true) { emit = make_float4(10.0f, 5.0f, 2.0f, 0.0f); f = make_float4(0.3f, 0.0f, 0.75f, 0.0f); } // blue is constrained
 
 			if (firsthit.wall == true) 
 			{ 
@@ -617,9 +638,10 @@ void render()
 	}
 }
 
+
 int main(int argc, char *argv[])
 {
-	delete interactiveCamera;
+	//delete interactiveCamera;
 	interactiveCamera = new InteractiveCamera();
 	interactiveCamera->setResolution(width, height);
 	interactiveCamera->setFOVX(45);
@@ -638,7 +660,7 @@ int main(int argc, char *argv[])
 	// ===========================
 
 	tetrahedral_mesh tetmesh;
-	tetmesh.loadobj("primitives.obj");
+	tetmesh.loadobj("simple.obj");
 
 	gpuErrchk(cudaMallocManaged(&mesh, sizeof(mesh2)));
 
@@ -679,23 +701,18 @@ int main(int argc, char *argv[])
 	for (auto i : tetmesh.nodes) mesh->n_y[i.index] = i.y;
 	for (auto i : tetmesh.nodes) mesh->n_z[i.index] = i.z;
 
-	// FACES
-	cudaMallocManaged(&mesh->f_index, mesh->facenum*sizeof(uint32_t));
-	for (auto i : tetmesh.faces) mesh->f_index[i.index] = i.index;
-	cudaMallocManaged(&mesh->f_node_a, mesh->facenum*sizeof(uint32_t));
-	cudaMallocManaged(&mesh->f_node_b, mesh->facenum*sizeof(uint32_t));
-	cudaMallocManaged(&mesh->f_node_c, mesh->facenum*sizeof(uint32_t));
-	for (auto i : tetmesh.faces) mesh->f_node_a[i.index] = i.node_a;
-	for (auto i : tetmesh.faces) mesh->f_node_b[i.index] = i.node_b;
-	for (auto i : tetmesh.faces) mesh->f_node_c[i.index] = i.node_c;
+	// ASSIGN FACES
+	gpuErrchk(cudaMallocManaged(&mesh->assgndata, tetmesh.tetnum*99*sizeof(int32_t))); // 6 tets * 99 faces per tet
+	for (int i = 0; i < tetmesh.tetnum * 99; i++){ mesh->assgndata[i] = -1; } // alle auf -1 setzen
 
-	// TETRAHEDRA - NEW
-	cudaMallocManaged(&mesh->adjfaces_num, tetmesh.adjfaces_num.size()*sizeof(uint32_t));
-	cudaMallocManaged(&mesh->adjfaces_numlist, tetmesh.adjfaces_numlist.size()*sizeof(uint32_t));
-	for (int i = 0; i < tetmesh.adjfaces_num.size(); i++) { mesh->adjfaces_num[i] = tetmesh.adjfaces_num.at(i); }
-	for (int i = 0; i < tetmesh.adjfaces_numlist.size(); i++) { mesh->adjfaces_numlist[i] = tetmesh.adjfaces_numlist.at(i); }
-	cudaMallocManaged(&mesh->hasfaces, mesh->tetnum*sizeof(bool));
-	for (auto i : tetmesh.tetrahedras) mesh->hasfaces[i.number] = i.hasfaces;
+	for (int i = 0; i < tetmesh.tetrahedras.size();i++) // loop over all tetrahedra
+	{
+		for (int j = 0; j < 99; j++) // loop over all faces per tet
+		{
+			if (j < tetmesh.tetrahedras.at(i).counter) { if (tetmesh.tetrahedras.at(i).faces[j] >= 0) mesh->assgndata[i * 99 + j] = tetmesh.tetrahedras.at(i).faces[j]; }
+			// else mesh->assgndata[i * 99 + j] = -1;
+		}
+	}
 
 	// TETRAHEDRA
 	cudaMallocManaged(&mesh->t_index, mesh->tetnum*sizeof(uint32_t));
@@ -743,10 +760,19 @@ int main(int argc, char *argv[])
 	uint32_t _dim = 2 + pow(mesh->tetnum, 0.25);
 	dim3 Block(_dim, _dim, 1);
 	dim3 Grid(_dim, _dim, 1);
-	GetTetrahedraFromPoint << <Grid, Block >> >(mesh, hostRendercam->position);
+	//uint32_t _dim = mesh->tetnum;
+	//dim3 Block(_dim, _dim, 1);
+	//dim3 Grid(_dim, _dim, 1);
+	GetTetrahedraFromPoint << <mesh->tetnum, 1 >> >(mesh, hostRendercam->position);
 	gpuErrchk(cudaDeviceSynchronize());
 
-	if (_start_tet == 0)
+
+
+
+
+	fprintf(stderr, "Starting point coordinates: %f %f %f \n",hostRendercam->position.x, hostRendercam->position.y, hostRendercam->position.z);
+
+	if (_start_tet == -1) 
 	{
 		fprintf(stderr, "Starting point outside tetrahedra! Aborting ... \n");
 		system("PAUSE");
