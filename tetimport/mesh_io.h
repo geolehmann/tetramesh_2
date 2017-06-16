@@ -500,9 +500,9 @@ __device__ float RayTriangleIntersection(const Ray &r,	const float4& v0, const f
 __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t start, rayhit &d, double &dist, bool edgeVisualisation, bool &isEdge, float4 &normal)
 {
 	int32_t current_tet = start;
-	int32_t nexttet, nextface, lastface = 0;
+	int32_t nexttet=0, nextface=0, lastface = 0;
 	bool hitfound = false, edgeFound=false;
-	float4 uvw;
+	float4 uvw=make_float4(0,0,0,0);
 
 	for (d.depth = 0; d.depth < 150; d.depth++)
 	{
@@ -552,7 +552,11 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 			}
 				
 
-			if (nexttet == -1 || nextface == -1) { d.wall = true; d.constrained = false;  d.face = nextface; d.tet = current_tet; hitfound = true; } // when adjacent tetrahedra is -1, ray stops
+			/*if (nexttet == -1 || nextface == -1) 
+			{ 
+				// we approached a wall tet.
+				d.wall = true; d.constrained = false;  d.face = lastface; d.tet = current_tet; hitfound = true; 
+			}*/
 			lastface = nextface;
 			current_tet = nexttet;
 

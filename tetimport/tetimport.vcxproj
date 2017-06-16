@@ -27,6 +27,7 @@
     <ClInclude Include="Mesh.txt">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="OpenFileDialog.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="mesh_io.h" />

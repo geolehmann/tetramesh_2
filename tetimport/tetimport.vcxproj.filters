@@ -42,6 +42,9 @@
     <ClInclude Include="mesh_io.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="OpenFileDialog.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Main.cu">

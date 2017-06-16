@@ -24,12 +24,11 @@
 #include <curand_kernel.h>
 
 #include "Sphere.h"
+#include "OpenFileDialog.h"
 
 #define spp 1
 #define gamma 2.2f
-#define MAX_DEPTH 2
-#define width 640	
-#define height 480
+
 
 float3* finalimage;
 float3* accumulatebuffer;
@@ -40,16 +39,20 @@ BBox box;
 GLuint vbo;
 mesh2 *mesh;
 __managed__ bool edgeVisualization = false;
+__managed__ int MAX_DEPTH = 3;
+__managed__ int width = 1920;
+__managed__ int height = 1080;
 
 // Camera
 InteractiveCamera* interactiveCamera = NULL;
 Camera* hostRendercam = NULL;
 int mouse_old_x, mouse_old_y;
 int mouse_buttons = 0;
+int lastX;
+int lastY;
 bool buttonActive = false, enableMouseMovement = true, cursorFree = false;
 float rotate_x = 0.0, rotate_y = 0.0;
 float translate_z = 0.0;
-int lastX = width / 2, lastY = height / 2;
 int theButtonState = 0;
 int theModifierState = 0;
 float scalefactor = 1.2f;
@@ -93,14 +96,6 @@ void updateCamPos()
 	float4 pos = hostRendercam->position;
 	// check if current pos is still inside tetrahedralization
 	ClampToBBox(&box, hostRendercam->position);
-	// look for new tetrahedra...
-	/*uint32_t _dim = 2 + pow(mesh->tetnum, 0.25);
-	dim3 Block(_dim, _dim, 1);
-	dim3 Grid(_dim, _dim, 1);
-	GetTetrahedraFromPoint << <Grid, Block >> >(mesh, pos);
-	gpuErrchk(cudaDeviceSynchronize());*/
-
-	// ändern: von _start_tet die vier adjtets laden, mit IsPointInTetrahedron checken
 	int32_t adjtets[4] = { mesh->t_adjtet1[_start_tet], mesh->t_adjtet2[_start_tet], mesh->t_adjtet3[_start_tet], mesh->t_adjtet4[_start_tet] };
 	if (!IsPointInThisTetCPU(mesh, pos, _start_tet))
 	{
@@ -275,11 +270,11 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 
 
 		// ------------------------------ TRIANGLE intersection --------------------------------------------
-		//traverse_ray(mesh, originInWorldSpace, rayInWorldSpace, newstart, firsthit, dist, edgeVisualization, isEdge, n);
-
-		// test - loop over all triangles, test for intersection
+		
+		
+		/*// test - loop over all triangles, test for intersection - klappt!!!
 		for (int i = 0; i < mesh->oldfacenum; i++)
-		{
+		{ // fg_node und ng_x stimmen!!!!!!!!!!!!!!!!
 					int32_t na = mesh->fg_node_a[i];
 					int32_t nb = mesh->fg_node_b[i];
 					int32_t nc = mesh->fg_node_c[i];
@@ -290,12 +285,16 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 					if (d_new < dist && d_new > 0.0001) 
 					{ 
 						dist = d_new; firsthit.constrained = true; 		
+						firsthit.face = i;
 						float4 e1 = v2 - v1;
 						float4 e2 = v3 - v1;
 						float4 s = originInWorldSpace - v1;
 						n = Cross(e1, e2);
 					}
 		}
+
+		dist = 9999; firsthit.face = -9999;*/
+		traverse_ray(mesh, originInWorldSpace, rayInWorldSpace, newstart, firsthit, dist, edgeVisualization, isEdge, n);
 
 
 		pointHitInWorldSpace = originInWorldSpace + rayInWorldSpace * dist;
@@ -324,11 +323,11 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 			n = normalize(n);
 			nl = Dot(n, rayInWorldSpace) < 0 ? n : n * -1;
 
-			if (firsthit.constrained == true) { emit = make_float4(10.0f, 5.0f, 2.0f, 0.0f); f = make_float4(0.3f, 0.0f, 0.75f, 0.0f); } // blue is constrained
+			if (firsthit.constrained == true) { emit = make_float4(1.0f, 0.0f, 0.3f, 0.0f); f = make_float4(0.75f, 0.75f, 0.75f, 0.0f); } // blue is constrained
 
 			if (firsthit.wall == true) 
 			{ 
-				emit = make_float4(1.0f, 0.0f, 0.0f, 0.0f); // wall wird erkannt
+				emit = make_float4(10.0f, 10.0f, 0.4f, 0.0f); // wall wird erkannt
 				f = make_float4(0.3f, 0.1f, 0.4f, 0.0f); 
 				/*float4 color1 = make_float4(0, 0, 0, 0);
 				float4 color2 = make_float4(0.0f, 1.0f, 1.0f, 0);
@@ -340,9 +339,9 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 			}
 
 			// dark ist weiß
-			if (firsthit.dark == true) { emit = make_float4(12.0f, 12.0f, 7.0f, 0.0f); f = make_float4(0.0f, 1.0f, 0.0f, 0.0f); /*printf("Éncountered dark state\n");*/ }
+			if (firsthit.dark == true) { emit = make_float4(0.3f, 0.3f, 0.5f, 0.0f); f = make_float4(0.0f, 1.0f, 0.0f, 0.0f); /*printf("Éncountered dark state\n");*/ }
 
-			//if (firsthit.face == 3 || firsthit.face == 6) { emit = make_float4(12, 12, 12, 0); f = make_float4(0.0f, 0.0f, 0.0f, 0.0f); }
+			if (firsthit.face == 3 || firsthit.face == 6) { emit = make_float4(12, 12, 12, 0); f = make_float4(0.0f, 0.0f, 0.0f, 0.0f); }
 
 			if (firsthit.constrained == true) { firsthit.refl_t = DIFF; }
 			if (firsthit.wall == true) { firsthit.refl_t = DIFF; }
@@ -600,7 +599,7 @@ void render()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 		std::stringstream title;
-		title << "Tetrahedral pathtracing with node-based tetrahedral mesh (2016) by Christian Lehmann";
+		title << "Tetrahedral pathtracing with node-based tetrahedral mesh (2017) by Christian Lehmann";
 		glfwSetWindowTitle(window, title.str().c_str());
 
 		// CUDA interop
@@ -626,13 +625,13 @@ void render()
 		float mrays = width*height*MAX_DEPTH*0.000001 / deltaTime;
 		std::string a = "Currently " + std::to_string(mrays) + " Mray/s";
 
-		my_stbtt_print(100, 200, a, make_float3(1, 1, 1));
+		my_stbtt_print(100, 200, a, make_float3(1, 0, 1));
 		std::string str_orig = std::to_string(hostRendercam->position.x) + " " + std::to_string(hostRendercam->position.y) + " " + std::to_string(hostRendercam->position.z);
 		std::string str_dir = std::to_string(hostRendercam->view.x) + " " + std::to_string(hostRendercam->view.y) + " " + std::to_string(hostRendercam->view.z);
-		my_stbtt_print(100, 150, "Ray origin: " + str_orig, make_float3(1, 1, 1));
-		my_stbtt_print(100, 100, "Ray direction: " + str_dir, make_float3(1, 1, 1));
-		my_stbtt_print(100, 50, "Current tet: " + std::to_string(_start_tet), make_float3(1, 1, 1));
-		my_stbtt_print(100, 10, "Current ms/frame: " + std::to_string(deltaTime*1000), make_float3(1, 1, 1));
+		my_stbtt_print(100, 150, "Ray origin: " + str_orig, make_float3(1, 0, 1));
+		my_stbtt_print(100, 100, "Ray direction: " + str_dir, make_float3(1, 0, 1));
+		my_stbtt_print(100, 50, "Current tet: " + std::to_string(_start_tet), make_float3(1, 0, 1));
+		my_stbtt_print(100, 10, "Current ms/frame: " + std::to_string(deltaTime*1000), make_float3(1, 0, 1));
 
 		glfwSwapBuffers(window);
 	}
@@ -641,11 +640,22 @@ void render()
 
 int main(int argc, char *argv[])
 {
+	float4 cam;
+	int depth;
+	int w, h;
+	parseIni("test.ini", cam, depth, w, h);
+	width = w;
+	height = h;
+	lastX = width / 2;
+	lastY = height / 2;
+	MAX_DEPTH = depth;
+
 	//delete interactiveCamera;
 	interactiveCamera = new InteractiveCamera();
 	interactiveCamera->setResolution(width, height);
 	interactiveCamera->setFOVX(45);
 	hostRendercam = new Camera();
+	hostRendercam->position = cam;
 	interactiveCamera->buildRenderCamera(hostRendercam);
 
 	cudaDeviceProp prop;
@@ -659,8 +669,13 @@ int main(int argc, char *argv[])
 	//     mesh2
 	// ===========================
 
+
+
+	
+	
+	openDialog();
 	tetrahedral_mesh tetmesh;
-	tetmesh.loadobj("simple.obj");
+	tetmesh.loadobj(global_filename);
 
 	gpuErrchk(cudaMallocManaged(&mesh, sizeof(mesh2)));
 
