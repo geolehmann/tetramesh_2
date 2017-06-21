@@ -32,6 +32,7 @@
     <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="mesh_io.h" />
     <ClInclude Include="tetgenio.h" />
+    <ClInclude Include="tinyobj.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>

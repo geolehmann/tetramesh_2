@@ -45,6 +45,9 @@
     <ClInclude Include="OpenFileDialog.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="tinyobj.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Main.cu">

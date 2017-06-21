@@ -1,4 +1,5 @@
 #pragma once
+#define TINYOBJLOADER_IMPLEMENTATION
 
 #include <stdio.h>
 #include <iostream>
@@ -11,6 +12,7 @@
 #include "Math.h"
 #include"mesh_io.h"
 #include "Intersections.h"
+#include "tinyobj.h"
 
 #define TETLIBRARY
 #include "tetgen.h"
@@ -51,7 +53,46 @@ public:
 
 void tetrahedral_mesh::loadobj(std::string filename)
 {
-	std::ifstream ifs(filename.c_str(), std::ifstream::in);
+	std::string mtldummy = "";
+	tinyobj::attrib_t attrib;
+std::vector<tinyobj::shape_t> shapes;
+std::vector<tinyobj::material_t> materials;
+  
+std::string err;
+bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename.c_str(),mtldummy.c_str(), true);
+// Loop over shapes
+for (size_t s = 0; s < shapes.size(); s++) {
+  // Loop over faces(polygon)
+  size_t index_offset = 0;
+  for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+    int fv = shapes[s].mesh.num_face_vertices[f];
+
+    // Loop over vertices in the face.
+    for (size_t v = 0; v < fv; v++) {
+      // access to vertex
+      tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+      tinyobj::real_t vx = attrib.vertices[3*idx.vertex_index+0];
+      tinyobj::real_t vy = attrib.vertices[3*idx.vertex_index+1];
+      tinyobj::real_t vz = attrib.vertices[3*idx.vertex_index+2];
+      tinyobj::real_t nx = attrib.normals[3*idx.normal_index+0];
+      tinyobj::real_t ny = attrib.normals[3*idx.normal_index+1];
+      tinyobj::real_t nz = attrib.normals[3*idx.normal_index+2];
+      tinyobj::real_t tx = attrib.texcoords[2*idx.texcoord_index+0];
+      tinyobj::real_t ty = attrib.texcoords[2*idx.texcoord_index+1];
+    }
+    index_offset += fv;
+
+    // per-face material
+    shapes[s].mesh.material_ids[f];
+  }
+}
+
+
+
+
+
+
+	/*std::ifstream ifs(filename.c_str(), std::ifstream::in);
 	if (!ifs.good())
 	{
 		std::cout << "Error loading obj:(" << filename << ") file not found!" << "\n";
@@ -88,12 +129,35 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	}
 	linecounter++;
 	if (linecounter == 100000) { std::cout << "Processed 100.000 lines\n"; linecounter = 0; }
+	}*/
+
+	float3 vertice;
+	for (size_t v = 0; v < attrib.vertices.size() / 3; v++) 
+	{
+	  vertice.x = attrib.vertices[3 * v + 0];
+	  vertice.y = attrib.vertices[3 * v + 1];
+	  vertice.z = attrib.vertices[3 * v + 2];
+	  oldnodes.push_back(node(v, vertice.x,vertice.y,vertice.z));
 	}
 
+	int32_t index_offset = 0;
+	    // For each face
+    for (size_t f = 0; f < shapes[0].mesh.num_face_vertices.size(); f++) {
+      size_t fnum = shapes[0].mesh.num_face_vertices[f];
+
+      // For each vertex in the face
+      for (size_t v = 0; v < fnum; v++) {
+        tinyobj::index_t idx = shapes[0].mesh.indices[index_offset + v];
+      index_offset += fnum;
+}
+
+
+
 	tetgenio in, tmp, out;
-	
-	oldnodenum = vertexid;
-	oldfacenum = oldfaces.size();
+	oldnodenum = attrib.vertices.size() / 3;
+	oldfacenum = oldnodenum / 3;
+	//oldnodenum = vertexid;
+	//oldfacenum = oldfaces.size();
 
 	/*in.pointlist = new REAL[in.numberofpoints * 3];
 	for (int32_t i = 0; i < in.numberofpoints; i++)

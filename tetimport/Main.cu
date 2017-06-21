@@ -669,10 +669,6 @@ int main(int argc, char *argv[])
 	//     mesh2
 	// ===========================
 
-
-
-	
-	
 	openDialog();
 	tetrahedral_mesh tetmesh;
 	tetmesh.loadobj(global_filename);
