@@ -16,6 +16,7 @@
 #pragma once
 #include <stdio.h>
 #include <iostream>
+#include <iterator>
 #include <fstream>
 #include <algorithm>
 #include <sstream>
@@ -60,7 +61,7 @@ public:
 	int32_t findex1, findex2, findex3, findex4;
 	int32_t nindex1, nindex2, nindex3, nindex4;
 	int32_t adjtet1, adjtet2, adjtet3, adjtet4;
-	int32_t faces[99]; // lets assume max 99 faces per tet for now
+	int32_t faces[499]; // lets assume max 499 faces per tet for now
 	int counter; // counter for position in the array
 	bool hasfaces;
 };
@@ -523,10 +524,10 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 			//bool reached_end = false;
 	
 			// loop over all embedded faces and check for intersection and get closest one			
-			for (int index = 0; index < 99; index++) // important observation -> even when looping over all faces, still same problems
+			for (int index = 0; index < 499; index++) // important observation -> even when looping over all faces, still same problems
 			{
 
-				int32_t ind = current_tet * 99 + index;
+				int32_t ind = current_tet * 499 + index;
 
 				//if (mesh->assgndata[ind] == -1) reached_end = true;
 				if (mesh->assgndata[ind] >= 0 /*&& !reached_end*/) // careful - we assume that facenumber is not greater than 99.999 

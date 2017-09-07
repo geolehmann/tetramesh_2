@@ -39,6 +39,7 @@ BBox box;
 GLuint vbo;
 mesh2 *mesh;
 __managed__ bool edgeVisualization = false;
+__managed__ bool distVisualization = false;
 __managed__ int MAX_DEPTH = 3;
 __managed__ int width = 1920;
 __managed__ int height = 1080;
@@ -197,6 +198,11 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 		// debug stuff
 		if (!edgeVisualization) edgeVisualization = true; else edgeVisualization = false;
 	}
+	if (key == GLFW_KEY_V && action == GLFW_PRESS)
+	{
+		// debug stuff
+		if (!distVisualization) distVisualization = true; else distVisualization = false;
+	}
 	if (key == GLFW_KEY_C && action == GLFW_PRESS)
 	{
 		if (cursorFree == false) { glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); cursorFree = true; enableMouseMovement = false; }
@@ -244,12 +250,12 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	}
 }
 
-__device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, curandState* randState)
+__device__ RGB radiance(mesh2 *mesh, int32_t start, float4 &rayo, float4 &rayd, float4 oldpos, curandState* randState, float &distance)
 {
 	float4 mask = make_float4(1.0f, 1.0f, 1.0f, 1.0f);	// colour mask (accumulated reflectance)
 	float4 accucolor = make_float4(0.0f, 0.0f, 0.0f, 0.0f);	// accumulated colour
-	float4 originInWorldSpace = ray.o;
-	float4 rayInWorldSpace = ray.d;
+	float4 originInWorldSpace = rayo;
+	float4 rayInWorldSpace = rayd;
 	int32_t newstart = start;
 
 	for (int bounces = 0; bounces < MAX_DEPTH; bounces++)
@@ -272,7 +278,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 		// ------------------------------ TRIANGLE intersection --------------------------------------------
 		
 		
-		// test - loop over all triangles, test for intersection - klappt!!!
+		/*// test - loop over all triangles, test for intersection - klappt!!!
 		for (int i = 0; i < mesh->oldfacenum; i++)
 		{ // fg_node und ng_x stimmen!!!!!!!!!!!!!!!!
 					int32_t na = mesh->fg_node_a[i];
@@ -293,12 +299,10 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 					}
 		}
 
-		// firsthit.tet wird nicht zugewiesen...!!! - ist aber für loop über rays nicht notwendig
+		dist = 9999; firsthit.face = -9999;*/
+		traverse_ray(mesh, originInWorldSpace, rayInWorldSpace, newstart, firsthit, dist, edgeVisualization, isEdge, n);
 
-
-		//dist = 9999; firsthit.face = -9999;
-		//traverse_ray(mesh, originInWorldSpace, rayInWorldSpace, newstart, firsthit, dist, edgeVisualization, isEdge, n);
-
+		distance = dist;
 
 		pointHitInWorldSpace = originInWorldSpace + rayInWorldSpace * dist;
 
@@ -316,7 +320,8 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 		f = make_float4(1.0f, 1.0f, 1.0f, 0.0f);
 		firsthit.refl_t = REFR;
 		x = originInWorldSpace + rayInWorldSpace * sphereDist;
-		n= normalize((x - spherePos));
+		float4 ds = x - spherePos;
+		n= normalize(ds);
 		nl = Dot(n, rayInWorldSpace) < 0 ? n : n * -1;
 		}
 
@@ -326,11 +331,11 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 			n = normalize(n);
 			nl = Dot(n, rayInWorldSpace) < 0 ? n : n * -1;
 
-			if (firsthit.constrained == true) { emit = make_float4(2.0f, 1.0f, 0.3f, 0.0f); f = make_float4(0.75f, 0.75f, 0.75f, 0.0f); } // blue is constrained
+			if (firsthit.constrained == true) { emit = make_float4(1.0f, 0.0f, 0.3f, 0.0f); f = make_float4(0.75f, 0.75f, 0.75f, 0.0f); } // blue is constrained
 
 			if (firsthit.wall == true) 
 			{ 
-				emit = make_float4(1.0f, 0.0f, 0.4f, 0.0f); // wall wird erkannt
+				emit = make_float4(10.0f, 10.0f, 0.4f, 0.0f); // wall wird erkannt
 				f = make_float4(0.3f, 0.1f, 0.4f, 0.0f); 
 				/*float4 color1 = make_float4(0, 0, 0, 0);
 				float4 color2 = make_float4(0.0f, 1.0f, 1.0f, 0);
@@ -344,7 +349,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 			// dark ist weiß
 			if (firsthit.dark == true) { emit = make_float4(0.3f, 0.3f, 0.5f, 0.0f); f = make_float4(0.0f, 1.0f, 0.0f, 0.0f); /*printf("Éncountered dark state\n");*/ }
 
-			if (firsthit.face == 1 ) { emit = make_float4(1, 0.4, 0.1, 0); f = make_float4(0.1f, 0.2f, 0.3f, 0.0f); }
+			if (firsthit.face == 3 || firsthit.face == 6) { emit = make_float4(12, 12, 12, 0); f = make_float4(0.0f, 0.0f, 0.0f, 0.0f); }
 
 			if (firsthit.constrained == true) { firsthit.refl_t = DIFF; }
 			if (firsthit.wall == true) { firsthit.refl_t = DIFF; }
@@ -497,6 +502,8 @@ __global__ void renderKernel(mesh2 *tetmesh, int32_t start, float3 *accumbuffer,
 	float4 rendercampos = make_float4(position.x, position.y, position.z, 0);
 	RGB finalcol(0);
 
+	float distance;
+
 	for (int s = 0; s < spp; s++)
 	{
 		float4 rendercamview = make_float4(view.x, view.y, view.z, 0); rendercamview = normalize(rendercamview); // view is already supposed to be normalized, but normalize it explicitly just in case.
@@ -532,11 +539,15 @@ __global__ void renderKernel(mesh2 *tetmesh, int32_t start, float3 *accumbuffer,
 		rayInWorldSpace = normalize(rayInWorldSpace);
 		float4 originInWorldSpace = aperturePoint;
 
-		finalcol += radiance(tetmesh, start, Ray(originInWorldSpace, rayInWorldSpace), rendercampos, &randState) * (1.0f / spp);
+
+
+		finalcol += radiance(tetmesh, start, originInWorldSpace, rayInWorldSpace, rendercampos, &randState, distance) * (1.0f / spp);
 	}
 
 	accumbuffer[i] += finalcol;
 	float3 tempcol = accumbuffer[i] / framenumber;
+
+	if (distVisualization) tempcol = make_float3(0, 0, distance * 3 / 100);
 
 	Color fcolour;
 	float3 colour = make_float3(clamp(tempcol.x, 0.0f, 1.0f), clamp(tempcol.y, 0.0f, 1.0f), clamp(tempcol.z, 0.0f, 1.0f));
@@ -717,7 +728,7 @@ int main(int argc, char *argv[])
 
 	// ASSIGN FACES
 	gpuErrchk(cudaMallocManaged(&mesh->assgndata, tetmesh.tetnum*99*sizeof(int32_t))); // 6 tets * 99 faces per tet
-	for (int i = 0; i < tetmesh.tetnum * 99; i++){ mesh->assgndata[i] = -1; } // alle auf -1 setzen
+	for (size_t i = 0; i < tetmesh.tetnum * 99; i++){ mesh->assgndata[i] = -1; } // alle auf -1 setzen
 
 	for (int i = 0; i < tetmesh.tetrahedras.size();i++) // loop over all tetrahedra
 	{

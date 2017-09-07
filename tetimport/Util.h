@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string>
 #include "stb_truetype.h"
-#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\extras\CUPTI\include\GL\glew.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\extras\CUPTI\include\GL\glew.h"
 
 unsigned char ttf_buffer[1<<20];
 unsigned char temp_bitmap[512*512];
@@ -14,7 +14,11 @@ GLuint ftex;
 
 void my_stbtt_initfont(void)
 {
+
+	
+
    fread(ttf_buffer, 1, 1<<20, fopen("times.ttf", "rb"));
+
    stbtt_BakeFontBitmap(ttf_buffer,0, 32.0, temp_bitmap,512,512, 32,96, cdata); // no guarantee this fits!
    // can free ttf_buffer at this point
    glGenTextures(1, &ftex);
