@@ -209,7 +209,7 @@ float ScTPCPU(const float4 &a, const float4 &b, const float4 &c)
 
 bool nearlysame(float a, float b)
 {
-	float _eps = 0.01;
+	float _eps = 0.01f;
 	if (abs(a - b) < _eps ) return true;
 	return false;
 }

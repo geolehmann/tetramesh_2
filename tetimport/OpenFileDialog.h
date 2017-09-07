@@ -55,9 +55,7 @@ int parseIni(std::string filename, float4 &campos, int &mdepth, int& x, int& y)
 	}
 
 	std::string line, key;
-	int vertexid = 0, faceid = 0;
 	std::cout << "Started loading config file " << filename <<". \n";
-	int linecounter = 0;
 	while (!ifs.eof() && std::getline(ifs, line))
 	{
 		key = "";
@@ -86,4 +84,5 @@ int parseIni(std::string filename, float4 &campos, int &mdepth, int& x, int& y)
 			y = y_;
 		}
 	}
+	return 0;
 }
