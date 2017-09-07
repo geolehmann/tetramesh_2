@@ -39,7 +39,8 @@ BBox box;
 GLuint vbo;
 mesh2 *mesh;
 __managed__ bool edgeVisualization = false;
-__managed__ int MAX_DEPTH = 3;
+__managed__ bool distVisualization = false;
+__managed__ int MAX_DEPTH = 2;
 __managed__ int width = 1920;
 __managed__ int height = 1080;
 
@@ -197,6 +198,13 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 		// debug stuff
 		if (!edgeVisualization) edgeVisualization = true; else edgeVisualization = false;
 	}
+
+		if (key == GLFW_KEY_V && action == GLFW_PRESS)
+	{
+		// debug stuff
+		if (!distVisualization) distVisualization = true; else distVisualization = false;
+	}
+
 	if (key == GLFW_KEY_C && action == GLFW_PRESS)
 	{
 		if (cursorFree == false) { glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); cursorFree = true; enableMouseMovement = false; }
@@ -300,6 +308,11 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 		//traverse_ray(mesh, originInWorldSpace, rayInWorldSpace, newstart, firsthit, dist, edgeVisualization, isEdge, n);
 
 
+		float corr_dist = dist * 10;
+		if (distVisualization) return RGB(0, 0, corr_dist);
+
+
+
 		pointHitInWorldSpace = originInWorldSpace + rayInWorldSpace * dist;
 
 		// ------------------------------ SPHERE intersection --------------------------------------------
@@ -326,7 +339,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, Ray &ray, float4 oldpos, cur
 			n = normalize(n);
 			nl = Dot(n, rayInWorldSpace) < 0 ? n : n * -1;
 
-			if (firsthit.constrained == true) { emit = make_float4(2.0f, 1.0f, 0.3f, 0.0f); f = make_float4(0.75f, 0.75f, 0.75f, 0.0f); } // blue is constrained
+			if (firsthit.constrained == true) { emit = make_float4(1.0f, 0.0f, 0.3f, 0.0f); f = make_float4(0.75f, 0.75f, 0.75f, 0.0f); } // blue is constrained
 
 			if (firsthit.wall == true) 
 			{ 
