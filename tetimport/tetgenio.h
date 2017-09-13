@@ -348,33 +348,29 @@ void tetrahedral_mesh::loadobj(std::string filename)
 
 
 				// tr_tri_intersect3D (double *C1, double *P1, double *P2, double *D1, double *Q1, double *Q2)
-
-				int coplanar = 0; // dummy types
-				float source[3];
-				float target[3];
-
-
 				float av0[3] = { v0.x, v0.y, v0.z };
-				float ae1[3] = { v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
-				float ae2[3] = { v2.x - v0.x, v2.y - v0.y, v2.z - v0.z };
+				float av1[3] = { v1.x, v1.y, v1.z };
+				float av2[3] = { v2.x, v2.y, v2.z };
+
+				// 1,2,3		1,3,4		1,2,4		2,3,4
 				float atv1[3] = { tv1.x, tv1.y, tv1.z };
-				float atv2[3] = { tv2.x, tv2.y, tv2.z }; // 1,2,3		1,3,4		1,2,4		2,3,4
+				float atv2[3] = { tv2.x, tv2.y, tv2.z }; 
+				float atv3[3] = { tv3.x, tv3.y, tv3.z };
+				float atv4[3] = { tv4.x, tv4.y, tv4.z };
 
-				float aev1[3] = { tv2.x - tv1.x, tv2.y - tv1.y, tv2.z - tv1.z };
-				float aev2[3] = { tv3.x - tv1.x, tv3.y - tv1.y, tv3.z - tv1.z };
 
-				float aev3[3] = { tv3.x - tv1.x, tv3.y - tv1.y, tv3.z - tv1.z };
-				float aev4[3] = { tv4.x - tv1.x, tv4.y - tv1.y, tv4.z - tv1.z };
 
-				float aev5[3] = { tv3.x - tv2.x, tv3.y - tv2.y, tv3.z - tv2.z };
-				float aev6[3] = { tv4.x - tv2.x, tv4.y - tv2.y, tv4.z - tv2.z };
-
-				if (tri_tri_intersect(av0, ae1, ae2, atv1, aev1, aev2) == 1 || tri_tri_intersect(av0, ae1, ae2, atv1, aev3, aev4) == 1 || tri_tri_intersect(av0, ae1, ae2, atv1, aev1, aev4) == 1 || tri_tri_intersect(av0, ae1, ae2, atv2, aev5, aev6) == 1)
+				if (NoDivTriTriIsect(av0, av1, av2, atv1, atv2, atv3) == 1 || NoDivTriTriIsect(av0, av1, av2, atv1, atv3, atv4) == 1 || NoDivTriTriIsect(av0, av1, av2, atv1, atv2, atv4) == 1 || NoDivTriTriIsect(av0, av1, av2, atv2, atv3, atv4) == 1)
 				{
 					oldfaces.at(i).face_is_constrained = true;
 					tetrahedras.at(j).hasfaces = true;
 					tetrahedras.at(j).faces[tetrahedras.at(j).counter] = i; // tetrahedron at position 'j' gets face at 'i' assigned 
 					tetrahedras.at(j).counter = tetrahedras.at(j).counter + 1; // increase counter 
+				}
+				else
+				{
+					// fuck
+					system("PAUSE");
 				}
 
 			}
