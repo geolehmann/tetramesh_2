@@ -53,7 +53,7 @@ public:
 
 void tetrahedral_mesh::loadobj(std::string filename)
 {
-	std::string mtldummy = "";
+	/*std::string mtldummy = "";
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
@@ -74,18 +74,18 @@ void tetrahedral_mesh::loadobj(std::string filename)
 				tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
 				tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
 				tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
-				/*tinyobj::real_t nx = attrib.normals[3 * idx.normal_index + 0];
+				tinyobj::real_t nx = attrib.normals[3 * idx.normal_index + 0];
 				tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
 				tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
 				tinyobj::real_t tx = attrib.texcoords[2 * idx.texcoord_index + 0];
-				tinyobj::real_t ty = attrib.texcoords[2 * idx.texcoord_index + 1];*/
+				tinyobj::real_t ty = attrib.texcoords[2 * idx.texcoord_index + 1];
 			}
 			index_offset += fv;
 
 			// per-face material
 			shapes[s].mesh.material_ids[f];
 		}
-	}
+	}*/
 
 
 
@@ -154,8 +154,8 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	}*/
 
 		tetgenio in, tmp, out;
-		oldnodenum = attrib.vertices.size() / 3;
-		oldfacenum = oldnodenum / 3;
+		oldnodenum = oldnodes.size();
+		oldfacenum = oldfaces.size();
 		//oldnodenum = vertexid;
 		//oldfacenum = oldfaces.size();
 
@@ -253,7 +253,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 			fac->holelist = NULL;
 			p = &fac->polygonlist[0];
 			p->numberofvertices = 3;
-			p->vertexlist = new int[p->numberofvertices]; // in vertexlist die nummer aus in.pointlist néhmen
+			p->vertexlist = new int[p->numberofvertices]; // in vertexlist die nummer aus in.pointlist nehmen
 			p->vertexlist[0] = addfaces.at(i).x;
 			p->vertexlist[1] = addfaces.at(i).y;
 			p->vertexlist[2] = addfaces.at(i).z;
@@ -367,11 +367,11 @@ void tetrahedral_mesh::loadobj(std::string filename)
 					tetrahedras.at(j).faces[tetrahedras.at(j).counter] = i; // tetrahedron at position 'j' gets face at 'i' assigned 
 					tetrahedras.at(j).counter = tetrahedras.at(j).counter + 1; // increase counter 
 				}
-				else
+				/*else
 				{
-					// fuck
+					// fuck --WRONG - we just have no intersection for this face/tet config
 					system("PAUSE");
-				}
+				}*/
 
 			}
 			if (i == (int)oldfaces.size() / 4) fprintf_s(stderr, "25%% done\n");
