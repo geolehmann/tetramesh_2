@@ -110,13 +110,13 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	oldnodenum = oldnodes.size();
 	oldfacenum = oldfaces.size();
 
-	in.pointlist = new REAL[in.numberofpoints * 3];
+	/*in.pointlist = new REAL[in.numberofpoints * 3]; // achtung - später neudefinition!!!!
 	for (int32_t i = 0; i < in.numberofpoints; i++)
 	{
 	in.pointlist[i * 3 + 0] = oldnodes.at(i).x;
 	in.pointlist[i * 3 + 1] = oldnodes.at(i).y;
 	in.pointlist[i * 3 + 2] = oldnodes.at(i).z;
-	}
+	}*/
 
 	// test 1 - get boundingbox and randomly generate points inside
 	//=============================================================
@@ -317,6 +317,14 @@ void tetrahedral_mesh::loadobj(std::string filename)
 				tetrahedras.at(j).hasfaces = true;
 				tetrahedras.at(j).faces[tetrahedras.at(j).counter] = i; // tetrahedron at position 'j' gets face at 'i' assigned 
 				tetrahedras.at(j).counter = tetrahedras.at(j).counter + 1; // increase counter 
+
+				if (tetrahedras.at(j).counter > oldfaces.size())
+				{
+					fprintf_s(stderr, "fuck error\n");
+					system("PAUSE");
+				}
+
+
 			}
 			/*else
 			{

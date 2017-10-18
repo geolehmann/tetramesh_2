@@ -524,10 +524,10 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 			//bool reached_end = false;
 	
 			// loop over all embedded faces and check for intersection and get closest one			
-			for (int index = 0; index < 499; index++) // important observation -> even when looping over all faces, still same problems
+			for (int index = 0; index < 99; index++) // important observation -> even when looping over all faces, still same problems
 			{
 
-				int32_t ind = current_tet * 499 + index;
+				int32_t ind = current_tet * 99 + index;
 
 				//if (mesh->assgndata[ind] == -1) reached_end = true;
 				if (mesh->assgndata[ind] >= 0 /*&& !reached_end*/) // careful - we assume that facenumber is not greater than 99.999 
@@ -553,11 +553,11 @@ __device__ void traverse_ray(mesh2 *mesh, float4 rayo, float4 rayd, int32_t star
 			}
 				
 
-			/*if (nexttet == -1 || nextface == -1) 
+			if (nexttet == -1 || nextface == -1) 
 			{ 
 				// we approached a wall tet.
 				d.wall = true; d.constrained = false;  d.face = lastface; d.tet = current_tet; hitfound = true; 
-			}*/
+			}
 			lastface = nextface;
 			current_tet = nexttet;
 
