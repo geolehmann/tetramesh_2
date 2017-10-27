@@ -278,8 +278,8 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, float4 &rayo, float4 &rayd, 
 		// ------------------------------ TRIANGLE intersection --------------------------------------------
 		
 		
-		/*// test - loop over all triangles, test for intersection - klappt!!!
-		for (int i = 0; i < mesh->oldfacenum; i++)
+		// test - loop over all triangles, test for intersection - klappt!!!
+		/*for (int i = 0; i < mesh->oldfacenum; i++)
 		{ // fg_node und ng_x stimmen!!!!!!!!!!!!!!!!
 					int32_t na = mesh->fg_node_a[i];
 					int32_t nb = mesh->fg_node_b[i];
@@ -297,9 +297,9 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, float4 &rayo, float4 &rayd, 
 						float4 s = originInWorldSpace - v1;
 						n = Cross(e1, e2);
 					}
-		}
+		}*/
 
-		dist = 9999; firsthit.face = -9999;*/
+		//dist = 9999; firsthit.face = -9999;*/
 		traverse_ray(mesh, originInWorldSpace, rayInWorldSpace, newstart, firsthit, dist, edgeVisualization, isEdge, n);
 
 		distance = dist;
@@ -331,7 +331,7 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, float4 &rayo, float4 &rayd, 
 			n = normalize(n);
 			nl = Dot(n, rayInWorldSpace) < 0 ? n : n * -1;
 
-			if (firsthit.constrained == true) { emit = make_float4(1.0f, 0.0f, 0.3f, 0.0f); f = make_float4(0.75f, 0.75f, 0.75f, 0.0f); } // blue is constrained
+			/*if (firsthit.constrained == true) { emit = make_float4(1.0f, 0.0f, 0.3f, 0.0f); f = make_float4(0.75f, 0.75f, 0.75f, 0.0f); } // blue is constrained
 
 			if (firsthit.wall == true) 
 			{ 
@@ -344,12 +344,12 @@ __device__ RGB radiance(mesh2 *mesh, int32_t start, float4 &rayo, float4 &rayd, 
 				float green = color1.y + percent * (color2.y - color1.y);
 				float blue = color1.z + percent * (color2.z - color1.z);
 				f = make_float4(red, green, blue, 0);*/
-			}
-
+			//}
+			emit = make_float4(0.1f, 0.0f, 0.3f, 0.0f); f = make_float4(0.75f, 0.75f, 0.75f, 0.0f);
 			// dark ist weiß
 			if (firsthit.dark == true) { emit = make_float4(0.3f, 0.3f, 0.5f, 0.0f); f = make_float4(0.0f, 1.0f, 0.0f, 0.0f); /*printf("Éncountered dark state\n");*/ }
 
-			if (firsthit.face == 3 || firsthit.face == 6) { emit = make_float4(12, 12, 12, 0); f = make_float4(0.0f, 0.0f, 0.0f, 0.0f); }
+			if (firsthit.face == 3 || firsthit.face == 6) { emit = make_float4(6, 6, 6, 0); f = make_float4(0.0f, 0.0f, 0.0f, 0.0f); }
 
 			if (firsthit.constrained == true) { firsthit.refl_t = DIFF; }
 			if (firsthit.wall == true) { firsthit.refl_t = DIFF; }

@@ -60,7 +60,7 @@ void tetrahedral_mesh::loadobj(std::string filename)
 
 	std::string err;
 	// mesh has always 3 vertices per face since triangulate option is on...
-	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename.c_str(), mtldummy.c_str(), true);
+	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename.c_str(), mtldummy.c_str(), false);
 
 
 	// Loop over shapes
@@ -110,36 +110,21 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	oldnodenum = oldnodes.size();
 	oldfacenum = oldfaces.size();
 
-	/*in.pointlist = new REAL[in.numberofpoints * 3]; // achtung - später neudefinition!!!!
-	for (int32_t i = 0; i < in.numberofpoints; i++)
-	{
-	in.pointlist[i * 3 + 0] = oldnodes.at(i).x;
-	in.pointlist[i * 3 + 1] = oldnodes.at(i).y;
-	in.pointlist[i * 3 + 2] = oldnodes.at(i).z;
-	}*/
-
-	// test 1 - get boundingbox and randomly generate points inside
-	//=============================================================
-
 	BBox mbox;
 	mbox = init_BBox(&oldnodes);
 	scale_BBox(mbox, 1.5); // scale boundingbox slightly bigger, so that wall triangles are well embedded into the tetrahedralization
 	std::vector <float4> rndnodes;
 
-
-	for (int i = 0; i < (int)(oldnodes.size()); i++)
+	in.pointlist = new REAL[(oldnodenum * 3) + (8 * 3)]; // Ausgangspunkte sind 8 Randpunkte plus Rndnodes mit Anzahl oldnodes
+	for (int32_t i = 0; i < oldnodenum; i++)
 	{
 		float r1 = distr(engine);
 		float r2 = distr(engine);
 		float r3 = distr(engine);
-		// NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
-		// scale 0..1 values to BBox
-		float n1 = ((r1 - 0) * (mbox.max.x - mbox.min.x) / (1 - 0)) + mbox.min.x;
-		float n2 = ((r2 - 0) * (mbox.max.y - mbox.min.y) / (1 - 0)) + mbox.min.y;
-		float n3 = ((r3 - 0) * (mbox.max.z - mbox.min.z) / (1 - 0)) + mbox.min.z;
-		rndnodes.push_back(make_float4(n1, n2, n3, 0));
+		in.pointlist[i * 3 + 0] = ((r1 - 0) * (mbox.max.x - mbox.min.x) / (1 - 0)) + mbox.min.x;
+		in.pointlist[i * 3 + 1] = ((r2 - 0) * (mbox.max.y - mbox.min.y) / (1 - 0)) + mbox.min.y;
+		in.pointlist[i * 3 + 2] = ((r3 - 0) * (mbox.max.z - mbox.min.z) / (1 - 0)) + mbox.min.z;
 	}
-
 
 	rndnodes.push_back(make_float4(mbox.max.x, mbox.max.y, mbox.max.z, 0));
 	rndnodes.push_back(make_float4(mbox.min.x, mbox.min.y, mbox.min.z, 0));
@@ -150,15 +135,17 @@ void tetrahedral_mesh::loadobj(std::string filename)
 	rndnodes.push_back(make_float4(mbox.max.x, mbox.min.y, mbox.max.z, 0));
 	rndnodes.push_back(make_float4(mbox.min.x, mbox.max.y, mbox.max.z, 0)); // 8 vertices of bounding box
 
-	in.pointlist = new REAL[rndnodes.size() * 3];
+
+	int start = (oldnodenum * 3);
 	for (int32_t i = 0; i < rndnodes.size(); i++)
 	{
-		in.pointlist[i * 3 + 0] = rndnodes.at(i).x;
-		in.pointlist[i * 3 + 1] = rndnodes.at(i).y;
-		in.pointlist[i * 3 + 2] = rndnodes.at(i).z;
+
+		in.pointlist[start + i * 3 + 0] = rndnodes.at(i).x;
+		in.pointlist[start + i * 3 + 1] = rndnodes.at(i).y;
+		in.pointlist[start + i * 3 + 2] = rndnodes.at(i).z;
 	}
 
-	in.numberofpoints = rndnodes.size();
+	in.numberofpoints = oldnodenum+8;
 	// create 6*2 triangle faces forming a bounding box cube
 	// =====================================================
 	in.numberoffacets = 12;
