@@ -23,7 +23,7 @@ Implement tetrahedralization via tetgen - done
 Associate face indices to nodes - done  
 Load mesh into global memeory on GPU - done  
   
-With bigger scenes,  numerical errors appear, therefore this projects is abandoned and a  
-anew approach tested.  
+09.11.2017: With bigger scenes,  numerical errors appear, therefore this projects is abandoned and a  
+a new approach tested.  
 
 
